@@ -52,9 +52,9 @@ def send_test_summary():
         server.login(qq_email, qq_auth_code)
         server.send_message(msg)
         server.quit()
-        print("✅ 邮件发送成功！收件人:", recipient)
+        print("邮件发送成功！收件人:", recipient)
     except Exception as e:
-        print("❌ 邮件发送失败:", str(e))
+        print("邮件发送失败:", str(e))
         exit(1)
 
 if __name__ == '__main__':
