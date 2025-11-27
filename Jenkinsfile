@@ -10,18 +10,18 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'python -m pip install --upgrade pip'
-                sh 'pip install -r requirements.txt'
+                bat 'python -m pip install --upgrade pip'
+                bat 'pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'python -m pytest'
+                bat 'python -m pytest'
             }
             post {
                 always {
-                    // 发布测试报告（需要安装 "JUnit Plugin"）
+                    // JUnit 报告（确保 pytest 输出 XML）
                     junit '**/test-reports/*.xml'
                 }
             }
