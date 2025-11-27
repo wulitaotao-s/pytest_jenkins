@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         // 🔑 替换为你的 QQ 邮箱和授权码（建议用 Jenkins Credentials 管理）
-        QQ_EMAIL = 'your_qq_email@qq.com'       // ←←← 改这里
-        QQ_AUTH_CODE = 'your_authorization_code' // ←←← 改这里（QQ邮箱授权码）
+        QQ_EMAIL = '2466065809@qq.com'       
+        QQ_AUTH_CODE = 'tpyxgmecjqrndiif' 
         RECIPIENT = '2466065809@qq.com'
         REPORT_NAME = 'test_report_22.html'
         REPORT_DIR = 'D:\\pytest_jenkins\\report'
