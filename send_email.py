@@ -1,40 +1,51 @@
 import os
+import json
 import smtplib
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
+from email.mime.multipart import MIMEMultipart
 
-def send_test_report():
+def send_test_summary():
     qq_email = os.environ['QQ_EMAIL']
     qq_auth_code = os.environ['QQ_AUTH_CODE']
     recipient = os.environ['RECIPIENT']
-    report_file = os.environ['REPORT_NAME']
+    json_file = os.environ['JSON_REPORT']
 
-    if not os.path.exists(report_file):
-        print(f"ERROR: 报告文件不存在: {report_file}")
+    if not os.path.exists(json_file):
+        print(f"ERROR: JSON 报告文件不存在: {json_file}")
         exit(1)
 
-    # 创建邮件对象
+    # 读取 JSON 报告
+    with open(json_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    # 统计结果
+    total = len(data['tests'])
+    passed = sum(1 for t in data['tests'] if t['outcome'] == 'passed')
+    failed = sum(1 for t in data['tests'] if t['outcome'] == 'failed')
+    skipped = sum(1 for t in data['tests'] if t['outcome'] == 'skipped')
+    error = sum(1 for t in data['tests'] if t['outcome'] == 'error')
+
+    # 构建邮件正文
+    summary = f"""自动化测试结果汇总：
+
+- 总用例数：{total}
+- 通过（PASS）：{passed}
+- 失败（FAIL）：{failed}
+- 跳过（SKIPPED）：{skipped}
+- 错误（ERROR）：{error}
+
+构建状态：{'✅ 全部通过' if failed == 0 and error == 0 else '❌ 存在失败或错误'}
+
+此邮件由 Jenkins 自动发送，请勿回复。
+"""
+
+    # 创建邮件
     msg = MIMEMultipart()
     msg['From'] = qq_email
     msg['To'] = recipient
-    msg['Subject'] = '[Jenkins] Pytest 测试报告（HTML附件）'
+    msg['Subject'] = f'[Jenkins] 测试结果汇总（PASS: {passed}, FAIL: {failed}）'
 
-    # 邮件正文（纯文本）
-    body = "您好！\n\n本次自动化测试已完成，详细报告请查收附件。\n\n- 共执行测试用例：10 个\n- 状态：全部通过 ✅\n\n此邮件由 Jenkins 自动发送，请勿回复。"
-    msg.attach(MIMEText(body, 'plain', 'utf-8'))
-
-    # 添加 HTML 报告作为附件
-    with open(report_file, "rb") as attachment:
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header(
-        'Content-Disposition',
-        f'attachment; filename= "{os.path.basename(report_file)}"'
-    )
-    msg.attach(part)
+    msg.attach(MIMEText(summary, 'plain', 'utf-8'))
 
     try:
         server = smtplib.SMTP_SSL('smtp.qq.com', 465)
@@ -47,4 +58,4 @@ def send_test_report():
         exit(1)
 
 if __name__ == '__main__':
-    send_test_report()
+    send_test_summary()
