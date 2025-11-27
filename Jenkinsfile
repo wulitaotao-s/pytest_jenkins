@@ -2,12 +2,14 @@ pipeline {
     agent any
 
     environment {
-        // 🔑 替换为你的真实信息（或使用 credentials）
-        QQ_EMAIL = '2466065809@qq.com'
-        QQ_AUTH_CODE = 'tpyxgmecjqrndiif'  
-        RECIPIENT = '2466065809@qq.com'
-        REPORT_NAME = 'test_report_22.html'
-        REPORT_DIR = 'D:\\pytest_jenkins\\report'
+        // 邮件配置（建议后续改用 credentials() 存储密码）
+        QQ_EMAIL = '2466065809@qq.com'               
+        QQ_AUTH_CODE = 'tpyxgmecjqrndiif'      
+        RECIPIENT = '2466065809@qq.com'        
+
+        // 报告配置
+        REPORT_NAME = 'pytest-测试报告'
+        REPORT_DIR = 'reports'
     }
 
     stages {
@@ -26,9 +28,10 @@ pipeline {
 
         stage('Run Tests & Generate HTML Report') {
             steps {
-                bat 'if not exist "${REPORT_DIR}" mkdir "${REPORT_DIR}"'
-                bat 'python -m pytest --html=${REPORT_NAME} --self-contained-html'
-                bat 'copy ${REPORT_NAME} ${REPORT_DIR}\\${REPORT_NAME}'
+                // Windows bat 中必须用 %VAR%，不能用 ${VAR}
+                bat 'if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%"'
+                bat 'python -m pytest --html=%REPORT_NAME% --self-contained-html'
+                bat 'copy %REPORT_NAME% %REPORT_DIR%\\%REPORT_NAME%'
             }
         }
     }
@@ -36,13 +39,10 @@ pipeline {
     post {
         always {
             script {
-                echo "✅ 准备通过 Python 发送测试报告邮件..."
-
-                // 调用独立的 Python 脚本（关键！）
-                bat 'python send_email.py'
+                echo '准备通过 Python 发送测试报告邮件...'
             }
-
-            archiveArtifacts artifacts: 'test_report_22.html', fingerprint: true
+            bat 'python send_email.py'
+            archiveArtifacts artifacts: "${env.REPORT_DIR}\\${env.REPORT_NAME}", fingerprint: true
         }
     }
 }
