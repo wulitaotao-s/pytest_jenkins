@@ -17,12 +17,11 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                bat 'python -m pytest'
+                bat 'python -m pytest --junitxml=report.xml'
             }
             post {
                 always {
-                    // JUnit 报告（确保 pytest 输出 XML）
-                    junit '**/test-reports/*.xml'
+                    junit 'report.xml'
                 }
             }
         }
@@ -33,7 +32,7 @@ pipeline {
             echo '✅ All tests passed!'
         }
         failure {
-            echo '❌ Tests failed!'
+            echo '❌ Some tests failed or report missing!'
         }
     }
 }
