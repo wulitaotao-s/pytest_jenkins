@@ -1,6 +1,5 @@
-# css定位参数化
-
 # 登录界面
+base_url = "http://192.168.10.1"
 login_username = "#loginUsername input"
 login_password = "#loginPasswd input"
 login_commit = '#login'
@@ -41,7 +40,7 @@ language_choose_third = "div.t-dropdown__menu span:nth-child(3)"
 language_choose_fourth = "div.t-dropdown__menu span:nth-child(4)"
 
 # home
-## home 
+## home
 Network = "#network"
 DeviceName = "#deviceName"
 DevicesInfo = "#devicesInfo"
@@ -49,9 +48,9 @@ home_one_line = ".t-table__row--hover"
 home_one_line_td1 = '.t-table__row--hover td:nth-child(1)'
 home_one_line_td2 = '.t-table__row--hover td:nth-child(2)'
 
-# basic 
+# basic
 ## wan
-Basic_wan = model_base_url[model] + "/index.html#/basic/wan"   # url
+Basic_wan = base_url + "/index.html#/basic/wan"   # url
 wan_Enable = "#wanEnable"
 wan_Connection_Status = "#wanConnectionStatus"
 # 带下拉选项
@@ -83,7 +82,7 @@ wan_Bridge_Mode = "#wanBridgeConnectionMode div.t-input"
 wan_PPPoe_Bridge = "#PPPoE_Bridged"
 wan_IP_Bridge = "#IP_Bridged"
 
-### static 
+### static
 wan_IP_Address = "#wanIpAddress input"
 wan_Subnet_Mask = "#wanIpMask input"
 wan_Default_Gateway = "#wanGatewayIp input"
@@ -119,7 +118,7 @@ wan_IPv6_Lease_Time = "#wanIpv6PdPrefixLeaseTime input"
 wan_commit = "#wanSavelButton"
 
 ## lan
-Basic_lan = model_base_url[model] + "/index.html#/basic/lan"  # url
+Basic_lan = base_url + "/index.html#/basic/lan"  # url
 lan_LAN_IP= "#lanIpv4Address input"
 lan_Subnet_Mask= "#lanIpv4Mask input"
 lan_DHCP_Server = "#dhcpEnable"
@@ -131,7 +130,7 @@ lan_DHCPv6_Server = "#lanIpv6DhcpEnable"
 lan_IPV6_commit = "#lanIpv6SaveButton"
 
 ## CWMP
-Basic_cwmp = model_base_url[model] + "/index.html#/basic/cwmp"
+Basic_cwmp = base_url + "/index.html#/basic/cwmp"
 cwmp_Periodic_Notification_Enable = "#cwmpPeriodEnable"
 cwmp_Notification_Interval = "#cwmpPeriodInterval input"
 cwmp_Server_URL = "#cwmpAcsUrl input"
@@ -142,7 +141,7 @@ cwmp_Terminal_Password = "#cwmpClientReqPassWord input"
 cwmp_commit = "#cwmpSaveButton"
 
 ## voip
-Basic_voip = model_base_url[model] + "/index.html#/basic/voip"
+Basic_voip = base_url + "/index.html#/basic/voip"
 ## basic setting
 voip_Protocol = "#voipCurrentProtocol input"
 voip_Binding_Interface = "#voipCurrentInterface input"
@@ -164,7 +163,7 @@ voip_Password = "#voipPassword"
 voip_commit = "#voipBasicSave"
 
 ## IPTV
-Basic_iptv = model_base_url[model] + "/index.html#/basic/iptv"
+Basic_iptv = base_url + "/index.html#/basic/iptv"
 iptv_Enable = "#multicastEnable"
 iptv_Bind_Option_LAN1 = '#LAN1 span[class="t-checkbox__input"]'
 iptv_Bind_Option_LAN2 = '#LAN2 span[class="t-checkbox__input"]'
@@ -177,7 +176,7 @@ iptv_IGMPMLD_Snooping = "#igmpSnoopingEnable"
 iptv_IGMPMLD_Proxy = "#igmpProxyEnable"
 
 ## bandsteering
-Basic_bandsteer = model_base_url[model] + "/index.html#/basic/wifi/bandsteer"
+Basic_bandsteer = base_url + "/index.html#/basic/wifi/bandsteer"
 bandsteering_enable = "#wifiband"
 bandsteering_SSID = "#bnadSteeringSsid input"
 bandsteering_Encryption = "#bnadSteeringCurrentEntrypt input"
@@ -186,7 +185,7 @@ bandsteering_24G_to_5G_RSSI = "#bnadSteering2GTo5GRssi input"
 bandsteering_5G_to_24G_RSSI = "#bnadSteering5GTo2GRssi input"
 bandsteering_commit = "#bnadSteeringSave"
 ##2.4G wifi
-Basic_wifi_24G = model_base_url[model] + "/index.html#/basic/wifi/wifi24"
+Basic_wifi_24G = base_url + "/index.html#/basic/wifi/wifi24"
 wlan_Enable = "#bandSteeringEnable"
 wlan_SSID = "#wlanCurrentSsidName input"
 wlan_more_wifi = "#wifi24ShowMoreAp"
@@ -202,7 +201,7 @@ wlan_get_score = "#wifiScan"
 wlan_Signal_Strength = "#wlanCurrentSignal input"
 wlan_commit = "#wlanSave"
 ## 5G wifi
-Basic_wifi_5G = model_base_url[model] + "/index.html#/basic/wifi/wifi5"
+Basic_wifi_5G = base_url + "/index.html#/basic/wifi/wifi5"
 wlan11ac_Enable = "#bandSteeringEnable"
 wlan11ac_SSID = "#wlan11acCurrentSsidName input"
 wlan11ac_more_wifi = "#wifi24ShowMoreAp"
@@ -219,11 +218,11 @@ wlan11ac_Signal_Strength = "#wlan11acCurrentSignal input"
 wlan11ac_commit = "#wlan11acSave"
 
 ## WPS
-Basic_wifi_wps = model_base_url[model] + "/index.html#/basic/wifi/wps"
+Basic_wifi_wps = base_url + "/index.html#/basic/wifi/wps"
 wps_enable = "#wpsTrigger"
 
 ## Guest
-Basic_wifi_guest = model_base_url[model] + "/index.html#/basic/wifi/guest"
+Basic_wifi_guest = base_url + "/index.html#/basic/wifi/guest"
 guest_Guest_2G_Enable = "#guestWifi2GEnable"
 guest_Guest_2G_SSID = "#guestWifi2GSsidName input"
 guest_Guest_2G_Password = "#guestWifi2GPassword input"
@@ -235,10 +234,10 @@ guest_Guest_5G_MaxStaNum = "#guestWifi5GDeviceCount input"
 guest_commit = "#guestWifiSave"
 
 ## access devices
-Basic_access_devices = model_base_url[model] + "/index.html#/basic/device"
+Basic_access_devices = base_url + "/index.html#/basic/device"
 
 ## Parental Control
-Basic_Parental_Control = model_base_url[model] + "/index.html#/basic/parentalControl"
+Basic_Parental_Control = base_url + "/index.html#/basic/parentalControl"
 Parental_Control_enable = "#parentalEnableStatus"
 Parental_Control_add = "#parentalAdd"
 Parental_Control_rule_mac_input = "#mac"
@@ -257,12 +256,12 @@ Parental_Control_rule_cancel = "#cancel"
 Parental_Control_rule_commit = "#save"
 
 ## Operate Mode
-Basic_Operate_Mode = model_base_url[model] + "/index.html#/basic/mode"
+Basic_Operate_Mode = base_url + "/index.html#/basic/mode"
 mode_Gpon = "#modeGPON"
 mode_Epon = "#modeEPON"
 
 ## Eazymesh
-Basic_Easymesh = model_base_url[model] + "/index.html#/basic/EasyMesh"
+Basic_Easymesh = base_url + "/index.html#/basic/EasyMesh"
 Eazymesh_EasyMesh = "#meshEnable"
 Eazymesh_Map_Version = "#meshVersion"
 Eazymesh_Device_Role = "#meshRole input"
@@ -273,11 +272,11 @@ Eazymesh_commit = "#meshSaveButton"
 
 # Advanced
 ## Speed Test
-Advanced_Speed_Test = model_base_url[model] + "/index.html#/basic/EasyMesh"
+Advanced_Speed_Test = base_url + "/index.html#/basic/EasyMesh"
 Speed_Test_start = "#startTest"
 
 ##Qos
-Advanced_netword_qos = model_base_url[model] + "/index.html#/advanced/network/qos"
+Advanced_netword_qos = base_url + "/index.html#/advanced/network/qos"
 Qos_Rule_Template = "#qosMode input"
 Qos_Enable_QoS = "#qosEnable"
 Qos_Uplink_Bandwidth = "#qosUplinkBandwidth input"
@@ -296,10 +295,10 @@ Qos_Scheduling_qosEnableForceWeight = "#qosEnableForceWeight"
 Qos_app_add_rule = "#appRuleAdd"
 
 ## Port Binding
-Advanced_netword_binding = model_base_url[model] + "/index.html#/advanced/network/binding"
+Advanced_netword_binding = base_url + "/index.html#/advanced/network/binding"
 
 ## LAN Port Mode
-Advanced_netword_lanPort = model_base_url[model] + "/index.html#/advanced/network/lanPort"
+Advanced_netword_lanPort = base_url + "/index.html#/advanced/network/lanPort"
 lan1_speed = "#port1Speed"
 lan1_mode = "#port1Mode"
 lan2_speed = "#port2Speed"
@@ -311,7 +310,7 @@ lan4_mode = "#port4Mode"
 lan_port_commit = "#lanPortSaveButton"
 
 ## FTP Client
-Advanced_FTP_Client = model_base_url[model] + "/index.html#/advanced/network/ftpClient"
+Advanced_FTP_Client = base_url + "/index.html#/advanced/network/ftpClient"
 Ftp_client_USB_Connect_Status = "#ftpClientUsbConnectStatus"
 Ftp_client_Download_Progess = "#ftpDownloadProgress"
 Ftp_client_Download_URL = "#ftpClientDownloadUrl input"
@@ -323,7 +322,7 @@ Ftp_client_commit = "#ftpDownSaveButton"
 
 ## Vpn
 ### ipSec
-Advanced_Vpn_ipSec = model_base_url[model]  + "/index.html#/advanced/network/vpn/ipSec"
+Advanced_Vpn_ipSec = base_url  + "/index.html#/advanced/network/vpn/ipSec"
 vpn_add = "#vpnAddButton"
 vpn_rule_Connection_Name = "#vpnConnectionName input"
 vpn_rule_Local_Gateway_IP = "#vpnLocalGatewayIp input"
@@ -351,13 +350,13 @@ vpn_rule_cancel = "button.t-dialog__cancel"
 vpan_rule_commit = "button.t-dialog__confirm"
 
 ## Upnp
-Advanced_Network_upnp = model_base_url[model] +  "/index.html#/advanced/network/upnp"
+Advanced_Network_upnp = base_url +  "/index.html#/advanced/network/upnp"
 Upnp_enable = "#upnpEnable"
 Upnp_disable_cancel = "button#cancel"
 Upnp_disable_confirm = "button#confirm"
 
 ## Smaba
-Advanced_Network_samba = model_base_url[model] + "/index.html#/advanced/network/samba"
+Advanced_Network_samba = base_url + "/index.html#/advanced/network/samba"
 Smaba_enable = "#sambaEnable"
 Smaba_Username = "#sambaUserName input"
 Smaba_New_Password = "#sambaNewPasswd input"
@@ -368,7 +367,7 @@ Smaba_commit = "#sambaSaveButton"
 Smaba_reset = "#sambaResetButton"
 
 ## DDNS
-Advanced_Network_Ddns= model_base_url[model] + "/index.html#/advanced/network/DDNS"
+Advanced_Network_Ddns= base_url + "/index.html#/advanced/network/DDNS"
 Ddns_add_rule = "div.addButton>button"
 Ddns_rule_Provider = "#ddnsName input"
 Ddns_rule_Server_Port = "#ddnsSserverPort input"
@@ -381,7 +380,7 @@ Ddns_rule_cancel = "#ddnsCancelButton"
 Ddns_rule_Commit = "#ddnsSaveButton"
 
 ## Static Route
-Advanced_Network_Static_Route = model_base_url[model] + "/index.html#/advanced/network/staticRoute"
+Advanced_Network_Static_Route = base_url + "/index.html#/advanced/network/staticRoute"
 Static_Route_add_rule = "#route4AddButton"
 Static_Route_rule_IP_Address = "#ipv4StaticRouterAddr input"
 Static_Route_rule_Gateway = "#ipv4StaticRouterGateway iput"
@@ -391,7 +390,7 @@ Static_Route_rule_cancel = "div#ipv4StaticRouterInfo div.t-dialog button:nth-chi
 Static_Route_rule_commit = "div#ipv4StaticRouterInfo div.t-dialog button:nth-child(2)"
 
 ## firewall
-Advanced_User_Firewall = model_base_url[model] + "/index.html#/advanced/user/Firewall"
+Advanced_User_Firewall = base_url + "/index.html#/advanced/user/Firewall"
 Firewall_enable_or_disable = "div#enablefire"
 Firewall_Attack_protection = "#enablefire"
 Firewall_Security_Level = "#firewallLevel input"
@@ -399,7 +398,7 @@ Firewall_disable_cancel = "button#cancel"
 Firewall_disable_confirm = "button#confirm"
 
 ## MAC Filter
-Advanced_User_MAC_Filter = model_base_url[model] + "/index.html#/advanced/user/macFilter"
+Advanced_User_MAC_Filter = base_url + "/index.html#/advanced/user/macFilter"
 mac_filter_enable_or_disable = "#macFilterEnable"
 mac_filter_disable_cancel = "button#cancel"
 mac_filter_disable_confirm = "button#confirm"
@@ -410,7 +409,7 @@ mac_filter_rule_cancel = "button.t-dialog__cancel"
 mac_filter_rule_commit = "button.t-dialog__confirm"
 
 ## URL Filter
-Advanced_User_URL_Filter = model_base_url[model] + "/index.html#/advanced/user/urlFilter"
+Advanced_User_URL_Filter = base_url + "/index.html#/advanced/user/urlFilter"
 url_filter_enable_or_disable = "#urlFilterEnable"
 url_filter_disable_cancel = "button#cancel"
 url_filter_disable_confirm = "button#confirm"
@@ -420,7 +419,7 @@ url_filter_rule_cancel = "button.t-dialog__cancel"
 url_filter_rule_commit = "button.t-dialog__confirm"
 
 ## ACl
-Advanced_User_ACL_Filter = model_base_url[model] + "/index.html#/advanced/user/aclFilter"
+Advanced_User_ACL_Filter = base_url + "/index.html#/advanced/user/aclFilter"
 Acl_filter_enable_or_disable = "#aclEnable"
 Acl_filter_disable_cancel = "button#cancel"
 Acl_filter_disable_confirm = "button#confirm"
@@ -435,7 +434,7 @@ Acl_filter_rule_cancel = "button.t-dialog__cancel"
 Acl_filter_rule_commit = "button.t-dialog__confirm"
 
 ## portFilter
-Advanced_User_portFilter = model_base_url[model] + "/index.html#/advanced/user/portFilter"
+Advanced_User_portFilter = base_url + "/index.html#/advanced/user/portFilter"
 ### up filter
 portFilter_up_enable_or_disable = "#upFilterEnable"
 portFilter_up_disable_cancel = "button#cancel"
@@ -470,7 +469,7 @@ portFilter_down_rule_commit = "button#downPortFilterSaveButton"
 
 
 ##Port Forward
-Advanced_User_portForward = model_base_url[model] + \
+Advanced_User_portForward = base_url + \
     "/index.html#/advanced/user/portForward"
 Port_Forward_add_rule = "#portForwardAddButton"
 Port_Forward_rule_Application = "#curApplication input"
@@ -483,13 +482,13 @@ Port_Forward_rule_cancel = "#cancelButton"
 Port_Forward_rule_commit = "#saveButton"
 
 ## DMZ
-Advanced_User_DMZ = model_base_url[model] + "/index.html#/advanced/user/dmz"
+Advanced_User_DMZ = base_url + "/index.html#/advanced/user/dmz"
 Dmz_enable_or_disable = "#dmzEnable"
 Dmz_Host_IP_Address = "#dmzIpaddress input"
 Dmz_commit = "#dmzSave"
 
 ## ALG
-Advanced_User_ALG = model_base_url[model] + "/index.html#/advanced/user/alg"
+Advanced_User_ALG = base_url + "/index.html#/advanced/user/alg"
 Enable_L2TP_Alg = '#algL2TP span[class="t-checkbox__input"]'
 Enable_IPSec_Alg = '#algIPSEC span[class="t-checkbox__input"]'
 Enable_H323_Alg = '#algH323 span[class="t-checkbox__input"]'
@@ -501,19 +500,19 @@ Alg_commit = "#ALG"
 
 
 ## password
-Advanced_System_Password_Management = model_base_url[model] + "/index.html#/advanced/system/password"
+Advanced_System_Password_Management = base_url + "/index.html#/advanced/system/password"
 Password_Management_Username = "#loginUsername input"
 Password_Management_New_Password = "#newPassword input"
 Password_Management_Confirm_Password = "#confirmPassword input"
 Password_Management_commit = "#saveButton"
 
 ## Upgrade
-Advanced_System_Upgrade = model_base_url[model] + "/index.html#/advanced/system/upgrade"
+Advanced_System_Upgrade = base_url + "/index.html#/advanced/system/upgrade"
 Upgrade_Local_Upgrade = ".t-upload input"
 Upgrade_commit = "#update"
 
 ## Device Management
-Advanced_System_Upgrade = model_base_url[model] + "/index.html#/advanced/system/device"
+Advanced_System_Upgrade = base_url + "/index.html#/advanced/system/device"
 Device_Management_Upgrade = "#upload button"
 Device_Management_Import_File = "#importRomButton"
 Device_Management_ROM_Backup = "#importRomButton"
@@ -521,13 +520,13 @@ Device_Management_Restart ="#reboot"
 Device_Management_Reset = "#reset"
 
 ## LED Control
-Advanced_System_LED_Control = model_base_url[model] + "/index.html#/advanced/system/ledCtrl"
+Advanced_System_LED_Control = base_url + "/index.html#/advanced/system/ledCtrl"
 Led_enable_or_disable = "#ledCtrlEnable"
 Led_disable_cancel = "button#cancel"
 Led_disable_confirm = "button#confirm"
 
 ## System Test
-Advanced_System_System_Test = model_base_url[model] + "/index.html#/advanced/system/test"
+Advanced_System_System_Test = base_url + "/index.html#/advanced/system/test"
 System_Test_Ping_Repeat_Times = "#diagnosePingTimes input"
 System_Test_Ping_Interface = "#diagnosePingInterface input"
 # 下拉选项
@@ -543,7 +542,7 @@ System_Test_Tracert_Start = "#tracertStartButton"
 System_Test_Manual_Report = "#informButton"
 
 ## Timeset
-Advanced_System_Timeset = model_base_url[model] + "/index.html#/advanced/system/timeSetting"
+Advanced_System_Timeset = base_url + "/index.html#/advanced/system/timeSetting"
 Timeset_Automatic = "#automatic"
 Timeset_Master_Sntp_Server = "#timeSettingSntpServer1 input"
 Timeset_Slave_Sntp_Server = "#timeSettingSntpServer2 input"
@@ -552,14 +551,14 @@ Timeset_Time_Zone = "#timeSettingZone input"
 Timeset_commit = "#timeSettingSaveButton"
 
 ## logManage
-Advanced_System_logManage = model_base_url[model] + "/index.html#/advanced/system/logManage"
+Advanced_System_logManage = base_url + "/index.html#/advanced/system/logManage"
 LogManage_enable_or_disable = "#systemLogEnable"
 LogManage_enable_confirm = "button#confirm"
 LogManage_Log_Level = "#systemLogLevel input"
 LogManage_download = "#downloadButton"
 
 ## Timed Reboot
-Advanced_System_Timed_Reboot = model_base_url[model] + "/index.html#/advanced/system/autoReboot"
+Advanced_System_Timed_Reboot = base_url + "/index.html#/advanced/system/autoReboot"
 Timed_Reboot = "#autoRebootEnable"
 Timed_Reboot_Sun = "div.t-checkbox-group > label: nth-child(1) span"
 Timed_Reboot_Mon = "div.t-checkbox-group > label: nth-child(2 span"
@@ -572,7 +571,7 @@ Timed_Reboot_Time = "#autoRebootTime input"
 Timed_Reboot_commit = "#autoRebootSaveButton"
 
 ## PON Auth
-Advanced_System_PON_Auth = model_base_url[model] + "/index.html#/advanced/system/ponAuth"
+Advanced_System_PON_Auth = base_url + "/index.html#/advanced/system/ponAuth"
 PON_Auth_Mode = "#ponCurrentAuth input"
 ### loid 模式
 PON_Loid = "#ponLoid input"
@@ -582,13 +581,13 @@ PON_Password = "#ponPassword"
 PON_Auth_commit = "#ponAuthSaveButton"
 
 ## Tool
-Advanced_System_Tool = model_base_url[model] + "/index.html#/advanced/system/tool"
+Advanced_System_Tool = base_url + "/index.html#/advanced/system/tool"
 Tool_telnetEnable = "#telnetEnable"
 Tool_wanMirrorEnable = "#wanMirrorEnable"
 
 
 # hidepage
-hidepage_login_url = model_base_url[model] + "/#/hidePage"
+hidepage_login_url = base_url + "/#/hidePage"
 hidepage_login_username = "#hidePageUsername input"
 hidepage_login_password = "#hidePagePassword input"
 hidepage_login_commit = "#hidePageLoginButton"

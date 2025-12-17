@@ -1,0 +1,19 @@
+[2025-12-17 17:18:59] [STEP 1/4] 🔹 登录设备...
+[2025-12-17 17:19:03] [STEP 2/4] ✅ 成功加载 Device Information 页面
+[2025-12-17 17:19:03] [STEP 3/4] 🔹 正在尝试进入 PON Information 页面...
+[2025-12-17 17:19:03] [STEP 4/4] ✅ 成功进入 PON Information 页面
+[2025-12-17 17:19:03] [STEP 5/4] 🔍 提取并验证关键字段...
+
+🔍 Device Information:
+├── Device Type: FT-35
+├── GPON SN: SZYC6209B9BC
+├── Hardware Version: V1.2
+├── Software Version: V1.0.14
+├── MAC: 5C:94:62:09:B9:BC
+├── CPU Usage: 19 %
+├── Memory Usage: 37 %
+└── Online Time: 7 h 28 min 40 s
+
+🔍 PON Information:
+
+✅ 所有关键字段均已验证！
