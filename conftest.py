@@ -48,7 +48,7 @@ def login(driver):
     time.sleep(1.5)
     try:
         alert = driver.switch_to.alert
-        print(f"⚠️ 登录后自动关闭弹窗: {alert.text}")
+        print(f"登录后自动关闭弹窗: {alert.text}")
         alert.accept()
     except NoAlertPresentException:
         pass
@@ -73,5 +73,9 @@ def save_test_log(content: str) -> str:
     with open(log_file, 'w', encoding='utf-8') as f:
         f.write(content)
 
-    print(f"📄 日志已保存至: {log_file}")
+    print(f"日志已保存至: {log_file}")
     return log_file
+    
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    print(f"开始执行测试: {item.name}")

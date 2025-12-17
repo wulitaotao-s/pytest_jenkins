@@ -29,9 +29,10 @@ pipeline {
             }
         }
 
+        // ✅ 核心修改在这里 👇
         stage('Run Tests & Generate JSON Report') {
             steps {
-                bat 'python -m pytest --json-report --json-report-file="${env.JSON_REPORT}"'
+                bat 'pytest -v --json-report --json-report-file="${env.JSON_REPORT}" Test_cases/test_device_info.py'
             }
         }
     }
