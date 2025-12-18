@@ -40,7 +40,7 @@ def login(driver):
 
     # 等待首页加载
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".t-table")))
-    print("✅ 登录成功，进入首页")
+    print("登录成功，进入首页")
     
     
 # 配置日志
