@@ -18,7 +18,7 @@ cmd = ["pytest", "-v", "-s", r".\Test_cases\test_device_info.py"]
 with open(log_file, "w", encoding="utf-8") as f:
     result = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True)
 
-print(f"✅ 测试完成，日志已保存至: {log_file}")
+print(f"测试完成，日志已保存至: {log_file}")
 
 # 可选：设置环境变量供 send_email.py 使用
 os.environ["LATEST_LOG"] = log_file
