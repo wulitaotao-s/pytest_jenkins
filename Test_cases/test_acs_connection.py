@@ -160,8 +160,26 @@ def test_acs_connection(driver):
     print(f"→ 当前 Connection Status: '{actual_status}'")
 
     print("进入 Advanced > System > System Test 页面")
-    driver.get(advanced_system_test_page)
-    print("已进入 Ping Test 页面")
+    print("点击 Advanced 标签")
+    advanced_tab = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Advanced']"))
+    )
+    advanced_tab.click()
+    print("已点击 Advanced")
+
+    print("点击 System 菜单")
+    system_menu = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, "//div[@class='menu-item'][contains(text(), 'System')]"))
+    )
+    system_menu.click()
+    print("已点击 System")
+
+    print("点击 System Test 子菜单")
+    system_test_item = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'menu-item') and contains(text(), 'System Test')]"))
+    )
+    system_test_item.click()
+    print("已进入 System Test 页面")
 
     print("设置 Repeat Times = 3")
     repeat_times_select = WebDriverWait(driver, 10).until(
