@@ -10,19 +10,19 @@ from conftest import login
 @pytest.mark.usefixtures("driver")
 def test_device_information_direct(driver):
     """测试登录后首页的 Device Information 表格"""
-    print("🚀 开始测试首页 Device Information")
+    print("开始测试首页 Device Information")
 
     # 1. 登录
     login(driver)
 
     # 2. 直接访问首页（无需点击）
-    print("✅ 已进入首页")
+    print("已进入首页")
 
     # 3. 等待 Device Information 表格加载
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Device Type')]"))
     )
-    print("✅ Device 信息区域已加载")
+    print("Device 信息区域已加载")
 
     # 4. 获取所有表格行
     table_rows = driver.find_elements(By.XPATH, "//table//tr")
