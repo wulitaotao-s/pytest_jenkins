@@ -57,9 +57,10 @@ wan_work_mode_field = "#wanWorkMode input"
 wan_work_mode_option_Route = 'li[id="Route"]'
 wan_work_mode_option_Bridge = 'li[id="Bridge"]'
 wan_bearer_service_field = "#wanService input"
-wan_bearer_service_option_INTERNET = 'li[title*="INTERNET"]'
-wan_bearer_service_option_IPTV = 'li[title*="IPTV"]'
-wan_bearer_service_option_VOIP = 'li[title*="VOIP"]'
+wan_bearer_service_option_INTERNET = '#INTERNET'
+wan_bearer_service_option_IPTV = '#IPTV'
+wan_bearer_service_option_VOIP = '#VOIP"]'
+wan_bearer_service_option_TR069 = '#TR069'
 # Connection Mode (Route)
 wan_conn_mode_field = "#wanConnectionMode input"
 wan_conn_mode_option_DHCP = 'li[id="DHCP"]'
@@ -87,7 +88,7 @@ wan_ipv6_addr_field = "#wanIpV6Address input"
 wan_ipv6_prefix_len_field = "#wanIpV6PrefixLe input"
 wan_ipv6_gateway_field = "#wanIpv6Gateway input"
 wan_ipv6_dns1_field = "#wanIpv6FirstDns input"
-wan_save_button = "#wanSavelButton"
+wan_save_button = "#wanSaveButton"
 
 # ========================
 # 🖥️ Basic - LAN
@@ -358,6 +359,26 @@ password_save_button = "#saveButton"
 advanced_upgrade_page = base_url + "/index.html#/advanced/system/upgrade"
 upgrade_file_input = ".t-upload input"
 upgrade_commit_button = "#update"
+
+# ========================================
+# 🔄 Advanced - System - Upgrade
+# ========================================
+advanced_upgrade_page = base_url + "/index.html#/advanced/system/upgrade"
+upgrade_file_input = ".t-upload input"
+upgrade_commit_button = "#update"
+
+
+# ========================================
+# 🛠 Advanced - System - System Test
+# ========================================
+advanced_system_test_page = base_url + "/index.html#/advanced/system/systemTest"
+ping_repeat_times_field = "select[name='repeatTimes']"
+ping_interface_field = "select[name='interface']"
+ping_address_field = "input[name='address']"
+ping_start_button = "button[type='button'][class*='start']"
+ping_result_success = ".ping-result-success"
+ping_result_text = "#pingResult pre"
+
 
 # ========================
 # ⏰ Advanced - System - Time Setting

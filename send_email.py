@@ -6,6 +6,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import re
+import sys
+import io
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def parse_log_filename(filename):
     """尝试从文件名解析时间，格式：2025-12-18_15-30-45.log"""
@@ -62,7 +66,7 @@ def send_test_summary():
 - 跳过（SKIPPED）：{skipped}
 - 错误（ERROR）：{error}
 
-构建状态：{'✅ 全部通过' if failed == 0 and error == 0 else '❌ 存在失败或错误'}
+构建状态：{'全部通过' if failed == 0 and error == 0 else '❌ 存在失败或错误'}
 
 【详细日志】
 最新日志文件：{latest_log or '无'}
@@ -91,9 +95,9 @@ def send_test_summary():
         server.login(qq_email, qq_auth_code)
         server.send_message(msg)
         server.quit()
-        print("📧 邮件发送成功！收件人:", recipient)
+        print("邮件发送成功！收件人:", recipient)
     except Exception as e:
-        print("📧 邮件发送失败:", str(e))
+        print("邮件发送失败:", str(e))
         exit(1)
 
 
