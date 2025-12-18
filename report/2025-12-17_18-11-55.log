@@ -1,3 +1,0 @@
-[2025-12-17 18:11:52] 开始测试：仅读取 Device Information
-[2025-12-17 18:11:55] 正在提取 Device Information 表格数据...
-[2025-12-17 18:11:55] 测试异常: 'gbk' codec can't encode character '\u2705' in position 2: illegal multibyte sequence

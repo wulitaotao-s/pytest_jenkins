@@ -1,12 +1,22 @@
 # send_email.py
-
 import json
 import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+import re
 
+def parse_log_filename(filename):
+    """尝试从文件名解析时间，格式：2025-12-18_15-30-45.log"""
+    if not filename.endswith(".log"):
+        return None
+    name = filename[:-4]  # 去掉 .log
+    try:
+        dt = datetime.strptime(name, "%Y-%m-%d_%H-%M-%S")
+        return dt
+    except ValueError:
+        return None
 
 def send_test_summary():
     # 从环境变量读取配置
@@ -26,23 +36,21 @@ def send_test_summary():
         skipped = sum(1 for t in data['tests'] if t['outcome'] == 'skipped')
         error = sum(1 for t in data['tests'] if t['outcome'] == 'error')
     else:
-        # 如果没有 JSON 报告，假设单个测试通过
         total = 1
         passed = 1
         failed = 0
         skipped = 0
         error = 0
 
-    # 2. 查找最新的 .log 文件
+    # 2. 查找最新的 .log 文件（按文件名时间解析）
     log_files = []
     for file in os.listdir(log_dir):
-        if file.endswith(".log"):
-            try:
-                dt = datetime.strptime(file[:-4], "%Y-%m-%d %H:%M:%S")
-                log_files.append((dt, file))
-            except ValueError:
-                continue
-    log_files.sort(reverse=True)
+        dt = parse_log_filename(file)
+        if dt:
+            log_files.append((dt, file))
+    
+    # 按时间倒序排序
+    log_files.sort(key=lambda x: x[0], reverse=True)
     latest_log = log_files[0][1] if log_files else None
 
     # 3. 构建邮件正文
@@ -74,6 +82,7 @@ def send_test_summary():
             with open(log_path, 'rb') as f:
                 part = MIMEText(f.read(), 'base64', 'utf-8')
                 part.add_header('Content-Disposition', 'attachment', filename=latest_log)
+                part.replace_header('Content-Transfer-Encoding', 'base64')
                 msg.attach(part)
 
     # 6. 发送邮件

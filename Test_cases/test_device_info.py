@@ -1,57 +1,38 @@
-# Test_cases/test_device_info.py
-
+# test_device_info.py
 import pytest
-from datetime import datetime
-from io import StringIO
+from selenium import webdriver
 from selenium.webdriver.common.by import By
-from conftest import login, save_test_log
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
+from conftest import login
 
-class DeviceInfoTest:
-    def __init__(self, driver):
-        self.driver = driver
-        self.log_buffer = StringIO()
+@pytest.mark.usefixtures("driver")
+def test_device_information_direct(driver):
+    """测试登录后首页的 Device Information 表格"""
+    print("🚀 开始测试首页 Device Information")
 
-    def _log(self, message):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line = f"[{timestamp}] {message}"
-        print(line)
-        self.log_buffer.write(line + "\n")
+    # 1. 登录
+    login(driver)
 
-    def run(self):
-        try:
-            self._log("开始测试：仅读取 Device Information")
-            login(self.driver)
+    # 2. 直接访问首页（无需点击）
+    print("✅ 已进入首页")
 
-            self._log("正在提取 Device Information 表格数据...")
+    # 3. 等待 Device Information 表格加载
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Device Type')]"))
+    )
+    print("✅ Device 信息区域已加载")
 
-            # 直接查找页面中所有表格行（不依赖 .t-table）
-            rows = self.driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
-            device_info = {}
+    # 4. 获取所有表格行
+    table_rows = driver.find_elements(By.XPATH, "//table//tr")
 
-            for row in rows:
-                tds = row.find_elements(By.TAG_NAME, "td")
-                if len(tds) >= 2:
-                    key = tds[0].text.strip()
-                    value = tds[1].text.strip()
-                    if key and value not in ["-", "N/A", ""]:
-                        device_info[key] = value
+    # 5. 遍历每一行，提取 key-value
+    for row in table_rows:
+        cells = row.find_elements(By.TAG_NAME, "td")
+        if len(cells) == 2:
+            key = cells[0].text.strip()
+            value = cells[1].text.strip()
+            print(f"{key}: {value}")
 
-            # 直接打印字典（最简单方式）
-            print("\n提取到的 Device Information:")
-            print(device_info)
-
-            self._log("测试完成")
-
-        except Exception as e:
-            error_msg = f"测试异常: {e}"
-            self._log(error_msg)
-            raise
-
-        finally:
-            save_test_log(self.log_buffer.getvalue())
-
-
-def test_device_info_only(driver):
-    tester = DeviceInfoTest(driver)
-    tester.run()
+    print("✅ 测试完成！")

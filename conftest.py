@@ -1,81 +1,57 @@
 # conftest.py
-
-import os
-import sys
-from datetime import datetime
 import pytest
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoAlertPresentException
 import element_config as ec
+import logging
+import os
+
 
 @pytest.fixture(scope="function")
 def driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--start-maximized")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--disable-infobars")
-    chrome_options.add_argument("--disable-popup-blocking")
-    # 注意：调试时不要加 --headless
-
-    driver = webdriver.Chrome(options=chrome_options)
-    yield driver
-    driver.quit()
-
+    """启动浏览器，测试结束后自动关闭"""
+    d = webdriver.Chrome()
+    yield d
+    d.quit()
 
 def login(driver):
-    driver.get(ec.base_url)
+    """登录函数"""
+    print("🚀 开始登录...")
+    print("🚀 开始登录...")
+    base_url = ec.base_url
+    login_username = ec.login_username
+    login_password = ec.login_password
+
+    driver.get(base_url)
     wait = WebDriverWait(driver, 10)
 
-    username_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_username)))
-    password_input = driver.find_element(By.CSS_SELECTOR, ec.login_password)
-    login_button = driver.find_element(By.CSS_SELECTOR, ec.login_commit)
+    # ✅ 正确使用 wait.until(...)
+    username = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_username_field)))
+    password = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_password_field)))
+    button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.login_submit_button)))
 
-    username_input.clear()
-    username_input.send_keys("admin")
-    password_input.clear()
-    password_input.send_keys("admin")
-    login_button.click()
-
-    # 等待可能的弹窗（隐形 alert）
-    import time
-    time.sleep(1.5)
-    try:
-        alert = driver.switch_to.alert
-        print(f"登录后自动关闭弹窗: {alert.text}")
-        alert.accept()
-    except NoAlertPresentException:
-        pass
+    username.clear()
+    username.send_keys(login_username)
+    password.clear()
+    password.send_keys(login_password)
+    button.click()
 
     # 等待首页加载
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".t-table")))
-
-
-# ========================
-# 🔹 独立日志保存函数（供测试类调用）
-# ========================
-def save_test_log(content: str) -> str:
-    """
-    将测试日志保存到 D:\pytest_jenkins\report\YYYY-MM-DD HH:MM:SS.log
-    返回完整文件路径
-    """
-    log_dir = r"D:\pytest_jenkins\report"
-    os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_file = os.path.join(log_dir, f"{timestamp}.log")
-
-    with open(log_file, 'w', encoding='utf-8') as f:
-        f.write(content)
-
-    print(f"日志已保存至: {log_file}")
-    return log_file
+    print("✅ 登录成功，进入首页")
     
-@pytest.hookimpl(tryfirst=True)
-def pytest_runtest_setup(item):
-    print(f"开始执行测试: {item.name}")
+    
+# 配置日志
+LOG_FILE = "test_run.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8'),  # 写入文件
+        logging.StreamHandler()  # 同时输出到控制台
+    ]
+)
+
+logger = logging.getLogger(__name__)
