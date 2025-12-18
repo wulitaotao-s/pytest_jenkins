@@ -1,0 +1,5 @@
+# 忽略所有 report 目录（无论在哪一级）
+report/
+
+# 或者只忽略项目根目录下的 report
+/report/
