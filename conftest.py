@@ -18,8 +18,8 @@ def driver():
 
 def login(driver):
     """登录函数"""
-    print("🚀 开始登录...")
-    print("🚀 开始登录...")
+    print("开始登录...")
+    print("开始登录...")
     base_url = ec.base_url
     login_username = ec.login_username
     login_password = ec.login_password
