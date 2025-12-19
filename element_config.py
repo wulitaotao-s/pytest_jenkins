@@ -1,412 +1,615 @@
-# element_config.py
-# 完整支持所有页面 + Wi-Fi 2.4G / 5G 配置项
+url_base = "http://192.168.10.1/"
 
-ELEMENT_CONFIG = {
-    # ======================
-    # 全局 URL 映射（哈希路由）
-    # ======================
-    "url_home": "/",
-    "url_basic_wan": "#/basic/wan",
-    "url_basic_lan": "#/basic/lan",
-    "url_basic_cwmp": "#/basic/cwmp",
-    "url_basic_voip": "#/basic/voip",
-    "url_basic_iptv": "#/basic/iptv",
-    "url_basic_wifi": "#/basic/wifi",
-    "url_basic_wifi_2g": "#/basic/wifi/2.4G",  # 新增
-    "url_basic_wifi_5g": "#/basic/wifi/5G",    # 新增
-    "url_basic_guest_wifi": "#/basic/guest_wifi",
-    "url_basic_access_devices": "#/basic/access_devices",
-    "url_basic_parental_control": "#/basic/parentalControl",
-    "url_basic_link_mode": "#/basic/mode",
-    "url_basic_easymesh": "#/basic/easymesh",
-    "url_advanced_qos": "#/advanced/qos",
-    "url_advanced_static_route": "#/advanced/static_route",
-    "url_advanced_ddns": "#/advanced/ddns",
-    "url_advanced_port_forward": "#/advanced/port_forward",
-    "url_advanced_mac_filter": "#/advanced/mac_filter",
-    "url_advanced_url_filter": "#/advanced/url_filter",
-    "url_advanced_acl_filter": "#/advanced/acl_filter",
-    "url_advanced_dmz": "#/advanced/dmz",
-    "url_advanced_algs": "#/advanced/algs",
-    "url_advanced_upnp": "#/advanced/upnp",
-    "url_advanced_samba": "#/advanced/samba",
-    "url_advanced_vpn_ipsec": "#/advanced/vpn_ipsec",
-    "url_advanced_vpn_l2tp": "#/advanced/vpn_l2tp",
-    "url_advanced_system_password": "#/advanced/system/password",
-    "url_advanced_system_upgrade": "#/advanced/system/upgrade",
-    "url_advanced_system_time": "#/advanced/system/time",
-    "url_advanced_system_device": "#/advanced/system/device",
-    "url_advanced_system_led": "#/advanced/system/led",
-    "url_advanced_system_loopback": "#/advanced/system/loopback",
-    "url_advanced_system_test": "#/advanced/system/test",
-    "url_advanced_system_tool": "#/advanced/system/tool",
-    "url_hidepage": "/hidepage",
+# css定位参数化
+# 登录界面
+login_username_field = 'input[placeholder="Please Enter Your Username"]'
+login_password_field = 'input[placeholder="Please Enter Your Password"]'
+login_submit_button = "#login"
+login_username = "admin"
+login_password = "admin"
+## login_language
+login_language = "button.header-user-btn"
+language_choose_first = "div.t-dropdown__menu span:nth-child(1)"
+language_choose_sencond = "div.t-dropdown__menu span:nth-child(2)"
+language_choose_third = "div.t-dropdown__menu span:nth-child(3)"
+language_choose_fourth = "div.t-dropdown__menu span:nth-child(4)"
 
-    # ======================
-    # Basic - WAN
-    # ======================
-    "basic_wan_enable": "#enable",
-    "basic_wan_request_name": "#requestName",
-    "basic_wan_request_name_options": [
-        "1_INTERNET_R_VID_100",
-        "2_INTERNET_R_VID_200",
-        "3_VOIP_R_VID_300",
-        "4_IPTV_R_VID_400",
-        "5_TR069_R_VID_500"
-    ],
-    "basic_wan_add_button": "#addButton",
-    "basic_wan_access_type": "#accessType",
-    "basic_wan_access_type_options": ["Route", "Bridge"],
-    "basic_wan_bearer_service": "#bearerService",
-    "basic_wan_bearer_service_options": ["INTERNET", "VOIP", "IPTV", "TR069"],
-    "basic_wan_connection_mode": "#connectionMode",
-    "basic_wan_connection_mode_options": ["PPPoE", "DHCP", "Static IP"],
-    "basic_wan_vlan_gateway_type": "#vlanGatewayType",
-    "basic_wan_vlan_gateway_type_options": ["Default Gateway", "User Defined"],
-    "basic_wan_vlan_id": "#vlanId",
-    "basic_wan_mtu": "#mtu",
-    "basic_wan_nat_enable": "#natEnable",
-    "basic_wan_bind_option_lan1": "#bindOptionLAN1",
-    "basic_wan_bind_option_lan2": "#bindOptionLAN2",
-    "basic_wan_bind_option_lan3": "#bindOptionLAN3",
-    "basic_wan_bind_option_lan4": "#bindOptionLAN4",
-    "basic_wan_protocol_version_ipv4": "#protocolVersionIPv4",
-    "basic_wan_protocol_version_ipv6": "#protocolVersionIPv6",
-    "basic_wan_delete_button": "#deleteButton",
-    "basic_wan_save_button": "#saveButton",
+## 向导界面
+### 密码设置
+guide_newpassword = "#loginPasswd input"
+guide_Confirm_Password = "#confirmPassword input"
+### wifi设置
+guide_wlan_enable = "#wlanEnable"
+guide_wlan_ssid = "#wlanCurrentSsidName input"
+guide_wlan_password = "#wlanPassword input"
+guide_wlan11ac_enable = "#wlan11acEnable"
+guide_wlan11ac_ssid = "#wlan11acCurrentSsidName input"
+guide_wlan11ac_password = "#wlan11acPassword input"
+### 向导界面通用
+guide_next = "#next"
+guide_skip = "#skip"
+guide_previous = "#previous"
 
-    # ======================
-    # Basic - LAN
-    # ======================
-    "basic_lan_ip": "#lanIp",
-    "basic_lan_subnet_mask": "#subnetMask",
-    "basic_lan_dhcp_server": "#dhcpServer",
-    "basic_lan_ip_start": "#ipStart",
-    "basic_lan_ip_end": "#ipEnd",
-    "basic_lan_lease_time": "#leaseTime",
-    "basic_lan_ra_mode": "#raMode",
-    "basic_lan_ra_mode_options": ["Stateless", "Stateful", "Disabled"],
-    "basic_lan_prefix_source": "#prefixSource",
-    "basic_lan_prefix_source_options": ["Auto", "Manual"],
-    "basic_lan_dhcpv6_server": "#dhcpv6Server",
-    "basic_lan_dhcpv6_server_options": ["Stateless", "Stateful", "Disabled"],
-    "basic_lan_configuration_mode": "#configurationMode",
-    "basic_lan_configuration_mode_options": ["SLAAC", "DHCPv6", "Both"],
-    "basic_lan_dns_source": "#dnsSource",
-    "basic_lan_dns_source_options": ["Auto", "Manual"],
-    "basic_lan_save": "#saveButton",
+#logout
+logout = "#logout"
+Comfirm = "button#confirm"
+Cencel = "button#cancel"
 
-    # ======================
-    # Basic - CWMP
-    # ======================
-    "basic_cwmp_periodic_notify": "#periodicNotificationEnable",
-    "basic_cwmp_notify_interval": "#notificationInterval",
-    "basic_cwmp_server_url": "#serverUrl",
-    "basic_cwmp_platform_username": "#platformUsername",
-    "basic_cwmp_platform_password": "#platformPassword",
-    "basic_cwmp_terminal_username": "#terminalUsername",
-    "basic_cwmp_terminal_password": "#terminalPassword",
-    "basic_cwmp_save": "#saveButton",
+#language
+language = "div.t-menu div div:nth-child(3) button:nth-child(1)"
+language_choose_first = "div.t-dropdown__menu span:nth-child(1)"
+language_choose_sencond = "div.t-dropdown__menu span:nth-child(2)"
+language_choose_third = "div.t-dropdown__menu span:nth-child(3)"
+language_choose_fourth = "div.t-dropdown__menu span:nth-child(4)"
 
-    # ======================
-    # Basic - VoIP
-    # ======================
-    "basic_voip_account": "#account",
-    "basic_voip_password": "#password",
-    "basic_voip_register_server": "#registerServer",
-    "basic_voip_proxy_server": "#proxyServer",
-    "basic_voip_save": "#saveButton",
+# home
+## home 
+Network = "#network"
+DeviceName = "#deviceName"
+DevicesInfo = "#devicesInfo"
+home_one_line = ".t-table__row--hover"
+home_one_line_td1 = '.t-table__row--hover td:nth-child(1)'
+home_one_line_td2 = '.t-table__row--hover td:nth-child(2)'
 
-    # ======================
-    # Basic - IPTV
-    # ======================
-    "basic_iptv_enable": "#enable",
-    "basic_iptv_multicast_vlan_id": "#multicastVlanId",
-    "basic_iptv_igmp_snooping": "#igmpSnooping",
-    "basic_iptv_igmp_proxy": "#igmpProxy",
-    "basic_iptv_save": "#saveButton",
+# basic 
+## wan
+Basic_wan = url_base + "/index.html#/basic/wan"
+wan_Enable = "#wanEnable"
+wan_Connection_Status = "#wanConnectionStatus"
+# 带下拉选项
+wan_Request_Name = "#wanCurrentName input"
+wan_Request_Name_TR069 = 'li[id*="TR069"]'
+wan_Request_Name_INTERNET = 'li[id*="INTERNET"]'
+wan_Request_Name_VOICE = 'li[id*="VOICE"]'
+wan_Request_Name_OTHER = 'li[id*="OTHER"]'
+# 带下拉选项
+wan_Access_Type = "#wanWorkMode input"
+wan_Access_Type_Route = 'li[id="Route"]'
+wan_Access_Type_Bridge = 'li[id="Bridge"]'
+# 带下拉选项
+wan_Bearer_Service = "#wanService input"
+wan_Bearer_Service_TR069 = 'li[title="TR069"]'
+wan_Bearer_Service_INTERNET = 'li[title *=INTERNET]'
+wan_Bearer_Service_HSI = 'li[title *=HSI]'
+wan_Bearer_Service_VOICE = 'li[title *=VOICE]'
+wan_Bearer_Service_VOIP = 'li[title *=VOIP]'
+wan_Bearer_Service_OTHER = 'li[title *=OTHER]'
+wan_Bearer_Service_IPTV = 'li[title *=IPTV]'
+# 带下拉选项 当wanWorkMode选择路由模式
+wan_Connection_Mode = "#wanConnectionMode input"
+wan_Connection_Mode_DHCP = 'li[id="DHCP"]'
+wan_Connection_Mode_Static = 'li[id="Static"]'
+wan_Connection_Mode_PPPoE = 'li[id="PPPoE"]'
+# 带下拉选项 当wanWorkMode选择桥模式
+wan_Bridge_Mode = "#wanBridgeConnectionMode div.t-input"
+wan_PPPoe_Bridge = "#PPPoE_Bridged"
+wan_IP_Bridge = "#IP_Bridged"
 
-    # ======================
-    # Basic - WiFi - 2.4G
-    # ======================
-    "basic_wifi_2g_enable": "#enable",
-    "basic_wifi_2g_ssid": "#ssid",
-    "basic_wifi_2g_encryption": "#encryption",
-    "basic_wifi_2g_encryption_options": ["WEP", "WPA-PSK", "WPA2-PSK", "WPA3-PSK"],
-    "basic_wifi_2g_wep_length": "#wepLength",
-    "basic_wifi_2g_wep_length_options": ["64-bit", "128-bit"],
-    "basic_wifi_2g_wep_key": "#wifi\\.wlanWepKey",
-    "basic_wifi_2g_select_mode": "#selectMode",
-    "basic_wifi_2g_select_mode_options": ["802.11b/g", "802.11n", "802.11ac"],
-    "basic_wifi_2g_bandwidth": "#bandwidth",
-    "basic_wifi_2g_bandwidth_options": ["20MHz", "40MHz"],
-    "basic_wifi_2g_country": "#country",
-    "basic_wifi_2g_country_options": ["RUSSIA", "USA", "CHINA", "JAPAN", "EUROPE"],
-    "basic_wifi_2g_wireless_channel": "#wirelessChannel",
-    "basic_wifi_2g_wireless_channel_options": ["Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],
-    "basic_wifi_2g_signal_strength": "#signalStrength",
-    "basic_wifi_2g_signal_strength_options": ["Low", "Medium", "High"],
-    "basic_wifi_2g_save": "#saveButton",
+### static 
+wan_IP_Address = "#wanIpAddress input"
+wan_Subnet_Mask = "#wanIpMask input"
+wan_Default_Gateway = "#wanGatewayIp input"
+wan_Primary_Dns = "#wanFirstDns input"
+wan_Secondary_Dns = "#wanSecondDns input"
+### pppoe
+wan_pppoe_name = "#wanPppoeUsername input"
+wan_pppoe_password = "#wanPppoePassword input"
+# 带下拉选项
+wan_VLAN_Gateway_Type = "#wanCurrentVlanMode input"
+wan_VLAN_Gateway_Type_TAG = 'li[id = "TAG"]'
+wan_VLAN_Gateway_Type_UNTAG = 'li[id="UNTAG"]'
+wan_VLAN_Gateway_Type_TRANSPARENT = 'li[id="TRANSPARENT"]'
+wan_VLAN_ID = "#wanVlanId input"
+wan_MTU = "#wanMtu input"
+### IPv4&IPV6
+wan_ipv4 = 'label#IPv4 span[class="t-radio__input"]'
+wan_ipv4ipv6 = 'label.t-radio[id="IPv4/IPv6"] span[class="t-radio__input"]'
+# 带下拉选项
+wan_IPv6_Connection_Mode = "#wanIpv6ConnectionMode input"
+wan_IPv6_Connection_Mode_SLAAC = 'li[id="SLAAC"]'
+wan_IPv6_Connection_Mode_DHCP = 'li[id="DHCPv6"]'
+wan_IPv6_Connection_Mode_Static = 'li[id="Static"]'
+# ipv6
+wan_IPv6_Address = "#wanIpV6Address input"
+wan_IPv6_Prefix_Length = "#wanIpV6PrefixLe input"
+wan_IPv6_Gateway = "#wanIpv6Gateway input"
+wan_IPV6_Primary_DNS = "#wanIpv6FirstDns input"
+wan_IPv6_Secondary_DNS = "#wanIpv6SecondDns input"
+wan_IPv6_Prefix_Address = "#wanIpv6PdPrefixAddress input"
+wan_IPv6_Primary_Time = "#wanIpv6PdPrefixPrimaryTime input"
+wan_IPv6_Lease_Time = "#wanIpv6PdPrefixLeaseTime input"
+wan_commit = "#wanSaveButton"
+# wan_nat_enble
+wan_nat_enable = 'div[id="wanNatEnable"]'
 
-    # ======================
-    # Basic - WiFi - 5G
-    # ======================
-    "basic_wifi_5g_enable": "#enable",
-    "basic_wifi_5g_ssid": "#ssid",
-    "basic_wifi_5g_encryption": "#encryption",
-    "basic_wifi_5g_encryption_options": ["WEP", "WPA-PSK", "WPA2-PSK", "WPA3-PSK"],
-    "basic_wifi_5g_wep_length": "#wepLength",
-    "basic_wifi_5g_wep_length_options": ["64-bit", "128-bit"],
-    "basic_wifi_5g_wep_key": "#wifi\\.wlanWepKey",
-    "basic_wifi_5g_select_mode": "#selectMode",
-    "basic_wifi_5g_select_mode_options": ["802.11a", "802.11n", "802.11ac"],
-    "basic_wifi_5g_bandwidth": "#bandwidth",
-    "basic_wifi_5g_bandwidth_options": ["20MHz", "40MHz", "80MHz"],
-    "basic_wifi_5g_country": "#country",
-    "basic_wifi_5g_country_options": ["RUSSIA", "USA", "CHINA", "JAPAN", "EUROPE"],
-    "basic_wifi_5g_wireless_channel": "#wirelessChannel",
-    "basic_wifi_5g_wireless_channel_options": ["Auto", "36", "40", "44", "48", "52", "56", "60", "64", "100", "104", "108", "112", "116", "120", "124", "128", "132", "136", "140", "144", "149", "153", "157", "161", "165"],
-    "basic_wifi_5g_signal_strength": "#signalStrength",
-    "basic_wifi_5g_signal_strength_options": ["Low", "Medium", "High"],
-    "basic_wifi_5g_save": "#saveButton",
+## lan
+Basic_lan = url_base + "/index.html#/basic/lan"  # url
+lan_LAN_IP= "#lanIpv4Address input"
+lan_Subnet_Mask= "#lanIpv4Mask input"
+lan_DHCP_Server = "#dhcpEnable"
+lan_IP_Start = "#lanIpv4AddrStart input"
+lan_IP_End = "#lanIpv4AddrEnd input"
+lan_commit = "#saveButton"
+lan_RA_Enable = "#lanIpv6RadvdEnable"
+lan_DHCPv6_Server = "#lanIpv6DhcpEnable"
+lan_IPV6_commit = "#lanIpv6SaveButton"
 
-    # ======================
-    # Basic - Guest WiFi
-    # ======================
-    "basic_guest_2g_enable": "#guest2GEnable",
-    "basic_guest_5g_enable": "#guest5GEnable",
-    "basic_guest_ssid_2g": "#guestSSID2G",
-    "basic_guest_ssid_5g": "#guestSSID5G",
-    "basic_guest_password_2g": "#guestPassword2G",
-    "basic_guest_password_5g": "#guestPassword5G",
-    "basic_guest_expire_time": "#expireTime",
-    "basic_guest_save": "#saveButton",
+## CWMP
+Basic_cwmp = url_base + "/index.html#/basic/cwmp"
+cwmp_Periodic_Notification_Enable = "#cwmpPeriodEnable"
+cwmp_Notification_Interval = "#cwmpPeriodInterval input"
+cwmp_Server_URL = "#cwmpAcsUrl input"
+cwmp_Platform_Username = "#cwmpAcsUserName input"
+cwmp_Platform_Password = "#cwmpAcsPassWord input"
+cwmp_Terminal_Username = "#cwmpClientReqUserName input"
+cwmp_Terminal_Password = "#cwmpClientReqPassWord input"
+cwmp_commit = "#cwmpSaveButton"
 
-    # ======================
-    # Basic - Access Devices
-    # ======================
-    "access_devices_online_count": "//div[contains(text(), 'Online Device(')]",
-    "access_devices_offline_count": "//div[contains(text(), 'Offline Device(')]",
-    "access_devices_first_device_name": "//tr[1]//td[contains(@class, 'device-name')]",
-    "access_devices_first_device_ip": "//tr[1]//td[contains(text(), 'IP Address:')]",
-    "access_devices_first_device_mac": "//tr[1]//td[contains(text(), 'MAC:')]",
-    "access_devices_url_limit_btn": "//button[contains(text(), 'URL Limit')]",
+## voip
+Basic_voip = url_base + "/index.html#/basic/voip"
+## basic setting
+voip_Protocol = "#voipCurrentProtocol input"
+voip_Binding_Interface = "#voipCurrentInterface input"
+voip_Region = "#voipRegion input"
+voip_Register_Server = "#voipRegisterServer input"
+voip_Proxy_Server = "#voipProxyServer input"
+voip_Proxy_Server_port = "#voipProxyServerPort input"
+voip_Outbound_Proxy = "#voipOutboundProxyServer input"
+voip_Outbound_Proxy_port = "#voipOutboundProxyServerPort input"
+voip_Secondary_Register_Server = "#voipSecRegisterServer input"
+voip_Secondary_Proxy_Server = "#voipSecProxyServer input"
+voip_Secondary_Proxy_Server_port = "#voipSecProxyServerPort input"
+voip_Secondary_Outbound_Proxy = "#voipSecOutboundProxyServer input"
+voip_Secondary_Outbound_Proxy_port = "#voipSecOutboundProxyServerPort input"
+voip_Registration_Status= "#voipRegistrationStatus"
+voip_Port_Rnable = "#voipPortEnable"
+voip_Account = "#voipAccount"
+voip_Password = "#voipPassword"
+voip_commit = "#voipBasicSave"
 
-    # ======================
-    # Basic - Parental Control
-    # ======================
-    "basic_parental_control_enable": "#enable",
-    "basic_parental_control_time_rule": "#timeRule",
-    "basic_parental_control_website_list": "#websiteList",
-    "basic_parental_control_add_website": "//button[contains(text(), 'Add')]",
-    "basic_parental_control_save": "#saveButton",
+## IPTV
+Basic_iptv = url_base + "/index.html#/basic/iptv"
+iptv_Enable = "#multicastEnable"
+iptv_Bind_Option_LAN1 = '#LAN1 span[class="t-checkbox__input"]'
+iptv_Bind_Option_LAN2 = '#LAN2 span[class="t-checkbox__input"]'
+iptv_Bind_Option_LAN3 = '#LAN3 span[class="t-checkbox__input"]'
+iptv_Bind_Option_LAN4 = '#LAN4 span[class="t-checkbox__input"]'
+iptv_Access_Type = "#multicastMode input"
+iptv_Multicast_VLAN_ID = "#multicastVlanId input"
+iptv_commit = "#iptvSaveButton"
+iptv_IGMPMLD_Snooping = "#igmpSnoopingEnable"
+iptv_IGMPMLD_Proxy = "#igmpProxyEnable"
 
-    # ======================
-    # Basic - Link Mode
-    # ======================
-    "basic_link_mode_enable": "#enable",
-    "basic_link_mode_mode": "#mode",
-    "basic_link_mode_mode_options": ["Bridge", "Router", "Repeater"],
-    "basic_link_mode_save": "#saveButton",
+## bandsteering
+Basic_bandsteer = url_base + "/index.html#/basic/wifi/bandsteer"
+bandsteering_enable = "#wifiband"
+bandsteering_SSID = "#bnadSteeringSsid input"
+bandsteering_Encryption = "#bnadSteeringCurrentEntrypt input"
+bandsteering_Password = "#bnadSteeringPassword input"
+bandsteering_24G_to_5G_RSSI = "#bnadSteering2GTo5GRssi input"
+bandsteering_5G_to_24G_RSSI = "#bnadSteering5GTo2GRssi input"
+bandsteering_commit = "#bnadSteeringSave"
+##2.4G wifi
+Basic_wifi_24G = url_base + "/index.html#/basic/wifi/wifi24"
+wlan_Enable = "#bandSteeringEnable"
+wlan_SSID = "#wlanCurrentSsidName input"
+wlan_more_wifi = "#wifi24ShowMoreAp"
+wlan_Encryption = "#wlanCurrentEntrypt input"
+wlan_Password = "#wlanPassword input"
+wlan_WPA_Encription = "#wlanWpaEncription input"
+wlan_more_setting = '#moreSettings div[class="t-collapse-panel__header t-is-clickable"]'
+wlan_Select_Mode = "#wlanCurrentMode input"
+wlan_Bandwidth = "#wlanCurrentBandwidth input"
+wlan_Country = "#wlanCountry input"
+wlan_Wireless_Channel = "#wlanCurrentChannel input"
+wlan_get_score = "#wifiScan"
+wlan_Signal_Strength = "#wlanCurrentSignal input"
+wlan_commit = "#wlanSave"
+## 5G wifi
+Basic_wifi_5G = url_base + "/index.html#/basic/wifi/wifi5"
+wlan11ac_Enable = "#bandSteeringEnable"
+wlan11ac_SSID = "#wlan11acCurrentSsidName input"
+wlan11ac_more_wifi = "#wifi24ShowMoreAp"
+wlan11ac_Encryption = "#wlan11acCurrentEntrypt input"
+wlan11ac_Password = "#wlan11acPassword input"
+wlan11ac_WPA_Encription = "#wlan11acWpaEncription input"
+wlan11ac_more_setting = '#moreSettings div[class="t-collapse-panel__header t-is-clickable"]'
+wlan11ac_Select_Mode = "#wlan11acCurrentMode input"
+wlan11ac_Bandwidth = "#wlan11acCurrentBandwidth input"
+wlan11ac_Country = "#wlan11acCountry input"
+wlan11ac_Wireless_Channel = "#wlan11acCurrentChannel input"
+wlan11ac_get_score = "#wifiScan"
+wlan11ac_Signal_Strength = "#wlan11acCurrentSignal input"
+wlan11ac_commit = "#wlan11acSave"
 
-    # ======================
-    # Basic - EasyMesh
-    # ======================
-    "basic_easymesh_enable": "#enable",
-    "basic_easymesh_network_name": "#networkName",
-    "basic_easymesh_password": "#password",
-    "basic_easymesh_save": "#saveButton",
+## WPS
+Basic_wifi_wps = url_base + "/index.html#/basic/wifi/wps"
+wps_enable = "#wpsTrigger"
 
-    # ======================
-    # Advanced - QoS
-    # ======================
-    "advanced_qos_enable": "#enableQos",
-    "advanced_qos_uplink_bandwidth": "#uplinkBandwidth",
-    "advanced_qos_downlink_bandwidth": "#downlinkBandwidth",
-    "advanced_qos_save": "#saveButton",
+## Guest
+Basic_wifi_guest = url_base + "/index.html#/basic/wifi/guest"
+guest_Guest_2G_Enable = "#guestWifi2GEnable"
+guest_Guest_2G_SSID = "#guestWifi2GSsidName input"
+guest_Guest_2G_Password = "#guestWifi2GPassword input"
+guest_Guest_2G_MaxStaNum = "#guestWifi2GDeviceCount input"
+guest_Guest_5G_Enable = "guestWifi5GEnable"
+guest_Guest_5G_SSID = "#guestWifi5GSsidName input"
+guest_Guest_5G_Password = "#guestWifi5GPassword input"
+guest_Guest_5G_MaxStaNum = "#guestWifi5GDeviceCount input"
+guest_commit = "#guestWifiSave"
 
-    # ======================
-    # Advanced - Static Route
-    # ======================
-    "advanced_static_route_add": "//button[contains(text(), 'Add')]",
-    "advanced_static_route_ip_address": "#ipAddress",
-    "advanced_static_route_gateway": "#gateway",
-    "advanced_static_route_subnet_mask": "#subnetMask",
-    "advanced_static_route_interface": "#interface",
-    "advanced_static_route_interface_options": ["WAN1", "WAN2", "LAN"],
-    "advanced_static_route_save": "//button[contains(text(), 'Confirm')]",
+## access devices
+Basic_access_devices = url_base + "/index.html#/basic/device"
 
-    # ======================
-    # Advanced - DDNS
-    # ======================
-    "advanced_ddns_add": "//button[contains(text(), 'Add')]",
-    "advanced_ddns_provider": "#provider",
-    "advanced_ddns_provider_options": ["DynDNS", "No-IP", "DuckDNS", "Custom"],
-    "advanced_ddns_host": "#host",
-    "advanced_ddns_domain": "#domain",
-    "advanced_ddns_username": "#username",
-    "advanced_ddns_password": "#password",
-    "advanced_ddns_enable": "#enable",
-    "advanced_ddns_save": "#saveButton",
+## Parental Control
+Basic_Parental_Control = url_base + "/index.html#/basic/parentalControl"
+Parental_Control_enable = "#parentalEnableStatus"
+Parental_Control_add = "#parentalAdd"
+Parental_Control_rule_mac_input = "#mac"
+Parental_Control_rule_mac_add = "#onAddMac"
+Parental_Control_rule_select_device = "#onChooseDevice"
+Parental_Control_rule_parentalCtlDurationActive = "#parentalCtlDurationActive"
+Parental_Control_rule_start_time = "#starttime0 input"
+Parental_Control_rule_end_time = "#endtime0 input"
+Parental_Control_rule_selete_wek = "#week0 input"
+Parental_Control_rule_add_time = "#addTime"
+Parental_Control_rule_parentalCtlActiveUrl = "#parentalCtlActiveUrl"
+Parental_Control_rule_Black_list = "#Black span.t-radio__input"
+Parental_Control_rule_White_list = "#White span.t-radio__input"
+Parental_Control_rule_list_address0 = "#addressItem0"
+Parental_Control_rule_cancel = "#cancel"
+Parental_Control_rule_commit = "#save"
 
-    # ======================
-    # Advanced - Port Forward
-    # ======================
-    "advanced_port_forward_add": "//button[contains(text(), 'Add')]",
-    "advanced_port_forward_protocol": "#protocol",
-    "advanced_port_forward_protocol_options": ["TCP", "UDP", "Both"],
-    "advanced_port_forward_external_port": "#externalPort",
-    "advanced_port_forward_internal_port": "#internalPort",
-    "advanced_port_forward_internal_host": "#internalHost",
-    "advanced_port_forward_mapping_name": "#mappingName",
-    "advanced_port_forward_application": "#application",
-    "advanced_port_forward_application_options": ["HTTP", "HTTPS", "FTP", "SSH", "Custom"],
-    "advanced_port_forward_save": "//button[contains(text(), 'Save')]",
+## Operate Mode
+Basic_Operate_Mode = url_base + "/index.html#/basic/mode"
+mode_Gpon = "#modeGPON"
+mode_Epon = "#modeEPON"
 
-    # ======================
-    # Advanced - MAC Filter
-    # ======================
-    "advanced_mac_filter_add": "//button[contains(text(), 'Add')]",
-    "advanced_mac_filter_devicename": "#devicename",
-    "advanced_mac_filter_mac": "#mac",
-    "advanced_mac_filter_save": "#saveButton",
+## Eazymesh
+Basic_Easymesh = url_base + "/index.html#/basic/EasyMesh"
+Eazymesh_EasyMesh = "#meshEnable"
+Eazymesh_Map_Version = "#meshVersion"
+Eazymesh_Device_Role = "#meshRole input"
+Eazymesh_Steering = "#steerEnable"
+Eazymesh_Load_Default_Setting = "#reset"
+Eazymesh_Trigger_WIFI_On_boarding = "#meshTrigger"
+Eazymesh_commit = "#meshSaveButton"
 
-    # ======================
-    # Advanced - URL Filter
-    # ======================
-    "advanced_url_filter_input": "#urlFilterInput",
-    "advanced_url_filter_add": "//button[contains(text(), 'Add')]",
-    "advanced_url_filter_save": "#saveButton",
+# Advanced
+## Speed Test
+Advanced_Speed_Test = url_base + "/index.html#/basic/EasyMesh"
+Speed_Test_start = "#startTest"
 
-    # ======================
-    # Advanced - DMZ
-    # ======================
-    "advanced_dmz_enable": "#enable",
-    "advanced_dmz_host_ip": "#dmzHostIp",
-    "advanced_dmz_save": "#saveButton",
+##Qos
+Advanced_netword_qos = url_base + "/index.html#/advanced/network/qos"
+Qos_Rule_Template = "#qosMode input"
+Qos_Enable_QoS = "#qosEnable"
+Qos_Uplink_Bandwidth = "#qosUplinkBandwidth input"
+Qos_Enable_DSCP_Flag = "#qosDscp"
+Qos_Enable_8021P_Flag = "#qosEn8021PRemark input"
+Qos_Select_type_Dics = '#discRule span[class="t-radio__input"]'
+Qos_Select_type_VLANID = '#vlanidRule span[class="t-radio__input"]'
+Qos_Select_type_App = '#appRule span[class="t-radio__input"]'
+Qos_Select_type_Type = '#typeRule span[class="t-radio__input"]'
+Qos_Scheduling_policy_PQ = "#PQ span.t-radio__input"
+Qos_Scheduling_policy_WRR = "#WRR span.t-radio__input"
+Qos_Scheduling_policy_CAR = "#CAR span.t-radio__input"
+# disc+Wrr模式
+Qos_Scheduling_qosEnableForceWeight = "#qosEnableForceWeight"
+# app或type模式
+Qos_app_add_rule = "#appRuleAdd"
 
-    # ======================
-    # Advanced - ALG
-    # ======================
-    "advanced_alg_l2tp": "#enableL2TPAlg",
-    "advanced_alg_ipsec": "#enableIPSecAlg",
-    "advanced_alg_h323": "#enableH323Alg",
-    "advanced_alg_rtsp": "#enableRTSPAlg",
-    "advanced_alg_sip": "#enableSIPAlg",
-    "advanced_alg_ftp": "#enableFTPAlg",
-    "advanced_alg_pptp": "#enablePPTPAlg",
-    "advanced_alg_save": "#saveButton",
+## Port Binding
+Advanced_netword_binding = url_base + "/index.html#/advanced/network/binding"
 
-    # ======================
-    # Advanced - System - Password
-    # ======================
-    "advanced_system_password_username": "#username",
-    "advanced_system_password_new": "#newPassword",
-    "advanced_system_password_confirm": "#confirmPassword",
-    "advanced_system_password_save": "#saveButton",
+## LAN Port Mode
+Advanced_netword_lanPort = url_base + "/index.html#/advanced/network/lanPort"
+lan1_speed = "#port1Speed"
+lan1_mode = "#port1Mode"
+lan2_speed = "#port2Speed"
+lan2_mode = "#port2Mode"
+lan3_speed = "#port3Speed"
+lan3_mode = "#port3Mode"
+lan4_speed = "#port4Speed"
+lan4_mode = "#port4Mode"
+lan_port_commit = "#lanPortSaveButton"
 
-    # ======================
-    # Advanced - System - Upgrade
-    # ======================
-    "advanced_system_upgrade_file_input": "#file",
-    "advanced_system_upgrade_button": "//button[contains(text(), 'Upgrade')]",
+## FTP Client
+Advanced_FTP_Client = url_base + "/index.html#/advanced/network/ftpClient"
+Ftp_client_USB_Connect_Status = "#ftpClientUsbConnectStatus"
+Ftp_client_Download_Progess = "#ftpDownloadProgress"
+Ftp_client_Download_URL = "#ftpClientDownloadUrl input"
+Ftp_client_USB_Interface_Name = "#ftpClientUsbInterfaceName input"
+Ftp_client_Auth_Enable = "#ftpClientAuthEnable"
+Ftp_client_username = "#ftpDownloadName input"
+Ftp_client_password = "#ftpDownloadPassword input"
+Ftp_client_commit = "#ftpDownSaveButton"
 
-    # ======================
-    # Advanced - System - Time
-    # ======================
-    "advanced_system_time_timezone": "#timeZone",
-    "advanced_system_time_timezone_options": [
-        "(GMT-12:00) International Date Line West",
-        "(GMT-11:00) Midway Island, Samoa",
-        "(GMT-10:00) Hawaii",
-        "(GMT-09:00) Alaska",
-        "(GMT-08:00) Pacific Time (US & Canada)",
-        "(GMT-07:00) Mountain Time (US & Canada)",
-        "(GMT-06:00) Central Time (US & Canada)",
-        "(GMT-05:00) Eastern Time (US & Canada)",
-        "(GMT-04:00) Atlantic Time (Canada)",
-        "(GMT-03:00) Brasilia",
-        "(GMT-02:00) Mid-Atlantic",
-        "(GMT-01:00) Azores",
-        "(GMT+00:00) London, Dublin, Lisbon",
-        "(GMT+01:00) Paris, Berlin, Rome",
-        "(GMT+02:00) Athens, Istanbul, Cairo",
-        "(GMT+03:00) Moscow, Riyadh",
-        "(GMT+04:00) Abu Dhabi, Muscat",
-        "(GMT+05:00) Islamabad, Karachi",
-        "(GMT+05:30) Chennai, Mumbai, New Delhi",
-        "(GMT+06:00) Dhaka",
-        "(GMT+07:00) Bangkok, Hanoi",
-        "(GMT+08:00) Beijing, Chongqing, Hong Kong",
-        "(GMT+09:00) Tokyo, Seoul",
-        "(GMT+10:00) Sydney, Melbourne",
-        "(GMT+11:00) Solomon Is.",
-        "(GMT+12:00) Auckland, Wellington"
-    ],
-    "advanced_system_time_ntp_primary": "#masterSntpServer",
-    "advanced_system_time_ntp_secondary": "#slaveSntpServer",
-    "advanced_system_time_save": "#saveButton",
+## Vpn
+### ipSec
+Advanced_Vpn_ipSec = url_base  + "/index.html#/advanced/network/vpn/ipSec"
+vpn_add = "#vpnAddButton"
+vpn_rule_Connection_Name = "#vpnConnectionName input"
+vpn_rule_Local_Gateway_IP = "#vpnLocalGatewayIp input"
+vpn_rule_Remote_Gateway_IP = "#vpnRemoteGatewayIp input"
+vpn_rule_Local_Access_Range = "#vpnLocalAccessRange input"
+vpn_rule_Local_IP_Address = "#vpnLocalIpAddress input"
+vpn_rule_Local_SubnetMask = "#vpnLocalIpSubnetMask input"
+vpn_rule_Remote_Access_Range = "#vpnRemoteAccessRange input"
+vpn_rule_Remote_IP_Address = "#vpnRemoteIpAddress input"
+vpn_rule_Remote_SubnetMask = "#vpnRemoteIpSubnetMask input"
+vpn_rule_Pre_Shared_Key = "#vpnPreSharedKey input"
+vpn_rule_Perfect_Forward_Secrecy = "#vpnPerfectForwardSecrecy"
+vpn_rule_Exchange_Mode_Phase_1 = "#vpnExchangeMode input"
+vpn_rule_Encryption_Algorithm_Phase_1 = "#vpnKey1EncryptionAlgorithm input"
+vpn_rule_Authentication_Algorithm_Phase_1 = "#vpnKey1AuthenticationAlgorithm input"
+vpn_rule_Diffie_Hellman_Group_Phase_1 = "#vpnKey1DiffieHellmanGroup input"
+vpn_rule_Key_Life_Time_Phase_1 = "#vpnKey1LifeTime input"
+vpn_rule_Key_Life_Time_type_Phase_1 = "#vpnKey1LifeTimeType input"
+vpn_rule_Encryption_Algorithm_Phase_2 = "#vpnKey1EncryptionAlgorithm input"
+vpn_rule_Authentication_Algorithm_Phase_2 = "#vpnKey1AuthenticationAlgorithm input"
+vpn_rule_Diffie_Hellman_Group_Phase_2 = "#vpnKey2DiffieHellmanGroup input"
+vpn_rule_Key_Life_Time_Phase_2 = "#vpnKey2LifeTime input"
+vpn_rule_Key_Life_Time_type_Phase_2 = "#vpnKey2LifeTimeType input"
+vpn_rule_cancel = "button.t-dialog__cancel"
+vpan_rule_commit = "button.t-dialog__confirm"
 
-    # ======================
-    # Advanced - System - Device Management
-    # ======================
-    "advanced_system_device_rom_file_input": "#file",
-    "advanced_system_device_import_file": "//button[contains(text(), 'Import File')]",
-    "advanced_system_device_rom_backup": "//button[contains(text(), 'ROM Backup')]",
-    "advanced_system_device_restart": "//button[contains(text(), 'Restart')]",
-    "advanced_system_device_reset_standard": "//button[contains(text(), 'Reset Standart')]",
-    "advanced_system_device_reset_all": "//button[contains(text(), 'Reset All')]",
+## Upnp
+Advanced_Network_upnp = url_base +  "/index.html#/advanced/network/upnp"
+Upnp_enable = "#upnpEnable"
+Upnp_disable_cancel = "button#cancel"
+Upnp_disable_confirm = "button#confirm"
 
-    # ======================
-    # Advanced - System - LED
-    # ======================
-    "advanced_system_led_enable": "#ledEnable",
-    "advanced_system_led_save": "#saveButton",
+## Smaba
+Advanced_Network_samba = url_base + "/index.html#/advanced/network/samba"
+Smaba_enable = "#sambaEnable"
+Smaba_Username = "#sambaUserName input"
+Smaba_New_Password = "#sambaNewPasswd input"
+Smaba_Confirm_Password = "#sambaConfirmPasswd input"
+Smaba_Work_Group = "#sambaWorkGroup input"
+Smaba_Net_Bios_Name = "#sambaNetBiosName input"
+Smaba_commit = "#sambaSaveButton"
+Smaba_reset = "#sambaResetButton"
 
-    # ======================
-    # Advanced - System - Loop Back
-    # ======================
-    "advanced_system_loopback_enable": "#enable",
-    "advanced_system_loopback_interval": "#sendingInterval",
-    "advanced_system_loopback_port_close_time": "#portCloseTime",
-    "advanced_system_loopback_ethernet_type": "#ethernetType",
-    "advanced_system_loopback_ethernet_type_options": ["Unicast", "Multicast"],
-    "advanced_system_loopback_vlan_tag": "#vlanTag",
-    "advanced_system_loopback_vlan": "#vlan",
-    "advanced_system_loopback_save": "#saveButton",
+## DDNS
+Advanced_Network_Ddn = url_base + "/index.html#/advanced/network/DDNS"
+Ddns_add_rule = "div.addButton>button"
+Ddns_rule_Provider = "#ddnsName input"
+Ddns_rule_Server_Port = "#ddnsSserverPort input"
+Ddns_rule_Host = "#ddnsHostName input"
+Ddns_rule_Domain = "#ddnsDomain input"
+Ddns_rule_Username = "#ddnsUsername input"
+Ddns_rule_Password = "#ddnsPassword input"
+Ddns_rule_Enbale = "#ddnsEnabled"
+Ddns_rule_cancel = "#ddnsCancelButton"
+Ddns_rule_Commit = "#ddnsSaveButton"
 
-    # ======================
-    # Advanced - System - Test
-    # ======================
-    "advanced_system_test_ping_repeat": "#repeatTimes",
-    "advanced_system_test_ping_interface": "#pingInterface",
-    "advanced_system_test_ping_interface_options": ["WAN", "LAN"],
-    "advanced_system_test_ping_address": "#pingAddress",
-    "advanced_system_test_ping_start": "//button[contains(text(), 'Start') and not(contains(@style, 'display: none'))][1]",
-    "advanced_system_test_tracert_interface": "#tracertInterface",
-    "advanced_system_test_tracert_interface_options": ["WAN", "LAN"],
-    "advanced_system_test_tracert_address": "#tracertAddress",
-    "advanced_system_test_tracert_start": "//button[contains(text(), 'Start') and not(contains(@style, 'display: none'))][2]",
-    "advanced_system_test_inform_manual": "//button[contains(text(), 'Manual report')]",
+## Static Route
+Advanced_Network_Static_Route = url_base + "/index.html#/advanced/network/staticRoute"
+Static_Route_add_rule = "#route4AddButton"
+Static_Route_rule_IP_Address = "#ipv4StaticRouterAddr input"
+Static_Route_rule_Gateway = "#ipv4StaticRouterGateway iput"
+Static_Route_rule_Subnet_Mask = "#ipv4StaticRouterMask input"
+Static_Route_rule_Interface = "#ipv4StaticRouterInterface input"
+Static_Route_rule_cancel = "div#ipv4StaticRouterInfo div.t-dialog button:nth-child(1)"
+Static_Route_rule_commit = "div#ipv4StaticRouterInfo div.t-dialog button:nth-child(2)"
 
-    # ======================
-    # Advanced - System - Tool
-    # ======================
-    "advanced_system_tool_telnet_enable": "#telnetEnable",
-    "advanced_system_tool_wan_mirror_enable": "#wanMirrorEnable",
-    "advanced_system_tool_save": "#saveButton",
+## firewall
+Advanced_User_Firewall = url_base + "/index.html#/advanced/user/Firewall"
+Firewall_enable_or_disable = "div#enablefire"
+Firewall_Attack_protection = "#enablefire"
+Firewall_Security_Level = "#firewallLevel input"
+Firewall_disable_cancel = "button#cancel"
+Firewall_disable_confirm = "button#confirm"
 
-    # ======================
-    # Login
-    # ======================
-    "login_username": "input[placeholder='Please Enter Your Username']",
-    "login_password": "input[placeholder='Please Enter Your Password']",
-    "login_submit": "button[type='submit']",
+## MAC Filter
+Advanced_User_MAC_Filter = url_base + "/index.html#/advanced/user/macFilter"
+mac_filter_enable_or_disable = "#macFilterEnable"
+mac_filter_disable_cancel = "button#cancel"
+mac_filter_disable_confirm = "button#confirm"
+mac_filter_add_rule = "#macFilterAddButton"
+mac_filter_rule_device_name = "#macFilterName input"
+mac_filter_rule_mac = "#macAddress input"
+mac_filter_rule_cancel = "button.t-dialog__cancel"
+mac_filter_rule_commit = "button.t-dialog__confirm"
 
-    # ======================
-    # Hide Page
-    # ======================
-    "hidepage_username": "input[name='Username']",
-    "hidepage_password": "input[name='Password']",
-    "hidepage_login": "input[value='Login']",
-}
+## URL Filter
+Advanced_User_URL_Filter = url_base + "/index.html#/advanced/user/urlFilter"
+url_filter_enable_or_disable = "#urlFilterEnable"
+url_filter_disable_cancel = "button#cancel"
+url_filter_disable_confirm = "button#confirm"
+url_filter_add_rule = "#urlFilterAddButton"
+url_filter_rule_url = "#urlFilterUrl input"
+url_filter_rule_cancel = "button.t-dialog__cancel"
+url_filter_rule_commit = "button.t-dialog__confirm"
+
+## ACl
+Advanced_User_ACL_Filter = url_base + "/index.html#/advanced/user/aclFilter"
+Acl_filter_enable_or_disable = "#aclEnable"
+Acl_filter_disable_cancel = "button#cancel"
+Acl_filter_disable_confirm = "button#confirm"
+Acl_filter_add_rule = "#aclAddButton"
+Acl_filter_rule_Enable = "#aclEntryEnable"
+Acl_filter_rule_Filter_Name = "#aclName input"
+Acl_filter_rule_Src_IP_Start = "#aclSrcIPStart input"
+Acl_filter_rule_Src_IP_End = "#aclSrcIPEnd input"
+Acl_filter_rule_Application = "#aclApplication input"
+Acl_filter_rule_Interface = "#aclInterface input"
+Acl_filter_rule_cancel = "button.t-dialog__cancel"
+Acl_filter_rule_commit = "button.t-dialog__confirm"
+
+## portFilter
+Advanced_User_portFilter = url_base + "/index.html#/advanced/user/portFilter"
+### up filter
+portFilter_up_enable_or_disable = "#upFilterEnable"
+portFilter_up_disable_cancel = "button#cancel"
+portFilter_up_disable_confirm = "button#confirm"
+portFilter_up_add_rule = "#upFilterAddButton"
+portFilter_up_rule_Name = "#upPortFilterRuleName input"
+portFilter_up_rule_Protocol = "#upPortFilterProtocol input"
+portFilter_up_rule_Source_Address = "#upPortFilterSrcIpAddress input"
+portFilter_up_rule_Source_Subnet_Mask = "#upPortFilterSrcMask input"
+portFilter_up_rule_Source_Port = "#upPortFilterSrcPort input"
+portFilter_up_rule_Destination_Address = "#upPortFilterDestIpAddress input"
+portFilter_up_rule_Destination_Subnet_Mask = "#upPortFilterDestIpMask input"
+portFilter_up_rule_Destination_Port = "#upPortFilterDestPort input"
+portFilter_up_rule_cancel = "button#upPortFilterCanelButton"
+portFilter_up_rule_commit = "button#upPortFilterSaveButton"
+### down filter
+portFilter_down_enable_or_disable  = "#downFilterEnable"
+portFilter_down_disable_cancel = "button#cancel"
+portFilter_down_disable_confirm = "button#confirm"
+portFilter_down_add_rule = "#downFilterAddButton"
+portFilter_down_rule_Name = "#downPortFilterRuleName input"
+portFilter_down_rule_Protocol = "#downPortFilterProtocol input"
+portFilter_down_rule_Source_Address = "#downPortFilterSrcIpAddress input"
+portFilter_down_rule_Source_Subnet_Mask = "#downPortFilterSrcMask input"
+portFilter_down_rule_Source_Port = "#downPortFilterSrcPort input"
+portFilter_down_rule_Destination_Address = "#downPortFilterDestIpAddress input"
+portFilter_down_rule_Destination_Subnet_Mask = "#downPortFilterDestIpMask input"
+portFilter_down_rule_Destination_Port = "#downPortFilterDestPort input"
+portFilter_down_rule_Interface = "#downPortFilterInterface input"
+portFilter_down_rule_cancel = "button#downPortFilterCancelButton"
+portFilter_down_rule_commit = "button#downPortFilterSaveButton"
+
+
+##Port Forward
+Advanced_User_portForward = url_base + \
+    "/index.html#/advanced/user/portForward"
+Port_Forward_add_rule = "#portForwardAddButton"
+Port_Forward_rule_Application = "#curApplication input"
+Port_Forward_rule_Protocol = "#portMappingProtocol input"
+Port_Forward_rule_External_Port = "#externalPort input"
+Port_Forward_rule_Internal_Port = "##internalPort input"
+Port_Forward_rule_Internal_Host = "##internalPort input"
+Port_Forward_rule_Mapping_Name = "#mappingName input"
+Port_Forward_rule_cancel = "#cancelButton"
+Port_Forward_rule_commit = "#saveButton"
+
+## DMZ
+Advanced_User_DMZ = url_base + "/index.html#/advanced/user/dmz"
+Dmz_enable_or_disable = "#dmzEnable"
+Dmz_Host_IP_Address = "#dmzIpaddress input"
+Dmz_commit = "#dmzSave"
+
+## ALG
+Advanced_User_ALG = url_base + "/index.html#/advanced/user/alg"
+Enable_L2TP_Alg = '#algL2TP span[class="t-checkbox__input"]'
+Enable_IPSec_Alg = '#algIPSEC span[class="t-checkbox__input"]'
+Enable_H323_Alg = '#algH323 span[class="t-checkbox__input"]'
+Enable_RTSP_Alg = '#algRTSP span[class="t-checkbox__input"]'
+Enable_SIP_Alg = '#algSIP span[class="t-checkbox__input"]'
+Enable_FTP_Alg = '#algFTP span[class="t-checkbox__input"]'
+Enable_PPTP_Alg = '#algPPTP span[class="t-checkbox__input"]'
+Alg_commit = "#ALG"
+
+
+## password
+Advanced_System_Password_Management = url_base + "/index.html#/advanced/system/password"
+Password_Management_Username = "#loginUsername input"
+Password_Management_New_Password = "#newPassword input"
+Password_Management_Confirm_Password = "#confirmPassword input"
+Password_Management_commit = "#saveButton"
+
+## Upgrade
+Advanced_System_Upgrade = url_base + "/index.html#/advanced/system/upgrade"
+Upgrade_Local_Upgrade = ".t-upload input"
+Upgrade_commit = "#update"
+
+## Device Management
+Advanced_System_Upgrade = url_base + "/index.html#/advanced/system/device"
+Device_Management_Upgrade = "#upload button"
+Device_Management_Import_File = "#importRomButton"
+Device_Management_ROM_Backup = "#importRomButton"
+Device_Management_Restart ="#reboot"
+Device_Management_Reset = "#reset"
+
+## LED Control
+Advanced_System_LED_Control = url_base + "/index.html#/advanced/system/ledCtrl"
+Led_enable_or_disable = "#ledCtrlEnable"
+Led_disable_cancel = "button#cancel"
+Led_disable_confirm = "button#confirm"
+
+## System Test
+Advanced_System_System_Test = url_base + "/index.html#/advanced/system/test"
+System_Test_Ping_Repeat_Times = "#diagnosePingTimes input"
+System_Test_Ping_Interface = "#diagnosePingInterface input"
+# 下拉选项
+System_Test_Ping_Interface_TR069 = 'li[id*="TR069"]'
+System_Test_Ping_INTERNET = 'li[id*="INTERNET"]'
+System_Test_Ping_VOICE = 'li[id*="VOICE"]'
+System_Test_Ping_OTHER = 'li[id*="OTHER"]'
+System_Test_Ping_Address = "#diagnosePingAddess input"
+System_Test_Ping_Start = "#pingStartButton"
+System_Test_Tracert = "#diagnoseTracertInterface input"
+System_Test_Tracert = "#diagnoseTracertAddess input"
+System_Test_Tracert_Start = "#tracertStartButton"
+System_Test_Manual_Report = "#informButton"
+
+## Timeset
+Advanced_System_Timeset = url_base + "/index.html#/advanced/system/timeSetting"
+Timeset_Automatic = "#automatic"
+Timeset_Master_Sntp_Server = "#timeSettingSntpServer1 input"
+Timeset_Slave_Sntp_Server = "#timeSettingSntpServer2 input"
+Timeset_Sync_Interval = "#timeSettingInterval input"
+Timeset_Time_Zone = "#timeSettingZone input"
+Timeset_commit = "#timeSettingSaveButton"
+
+## logManage
+Advanced_System_logManage = url_base + "/index.html#/advanced/system/logManage"
+LogManage_enable_or_disable = "#systemLogEnable"
+LogManage_enable_confirm = "button#confirm"
+LogManage_Log_Level = "#systemLogLevel input"
+LogManage_download = "#downloadButton"
+
+## Timed Reboot
+Advanced_System_Timed_Reboot = url_base + "/index.html#/advanced/system/autoReboot"
+Timed_Reboot = "#autoRebootEnable"
+Timed_Reboot_Sun = "div.t-checkbox-group > label: nth-child(1) span"
+Timed_Reboot_Mon = "div.t-checkbox-group > label: nth-child(2 span"
+Timed_Reboot_Tues = "div.t-checkbox-group > label: nth-child(3) span"
+Timed_Reboot_Wed = "div.t-checkbox-group > label: nth-child(4) span"
+Timed_Reboot_Thur = "div.t-checkbox-group > label: nth-child(5) span"
+Timed_Reboot_Fri = "div.t-checkbox-group > label: nth-child(6) span"
+Timed_Reboot_Fri = "div.t-checkbox-group > label: nth-child(7) span"
+Timed_Reboot_Time = "#autoRebootTime input"
+Timed_Reboot_commit = "#autoRebootSaveButton"
+
+## PON Auth
+Advanced_System_PON_Auth = url_base + "/index.html#/advanced/system/ponAuth"
+PON_Auth_Mode = "#ponCurrentAuth input"
+### loid 模式
+PON_Loid = "#ponLoid input"
+PON_Loid_Password = "#ponLoidPasswd input"
+### pwd模式
+PON_Password = "#ponPassword"
+PON_Auth_commit = "#ponAuthSaveButton"
+
+## Tool
+Advanced_System_Tool = url_base + "/index.html#/advanced/system/tool"
+Tool_telnetEnable = "#telnetEnable"
+Tool_wanMirrorEnable = "#wanMirrorEnable"
+
+
+# hidepage
+hidepage_login_url = url_base + "/#/hidePage"
+hidepage_login_username = "#hidePageUsername input"
+hidepage_login_password = "#hidePagePassword input"
+hidepage_login_commit = "#hidePageLoginButton"
+## hidepage Common Setting
+hidepage_telnetEnable = "#telnetEnable"
+hidepage_wanMirrorEnable = "#wanMirrorEnable"
+## hidepage Common Setting
+hidepage_Upgrade_Local_Upgrade = '.t-upload button'
+hidepage_Upgrade_commit = "#update"
+## hidepage Password Management
+hidepage_Username = "#loginUsername input"
+hidepage_New_Password = "#newPassword input"
+hidepage_Confirm_Password = "#confirmPassword input"
+hidepage_Password_Management_commit = "#saveButton"
+## hidepage Device Management
+hidepage_Device_Management_Upgrade = "#upload button"
+hidepage_Device_Management_Import_File = "#importRomButton"
+hidepage_Device_Management_ROM_Backup = "#importRomButton"
+hidepage_Device_Management_Restart = "#reboot"
+hidepage_Device_Management_Reset = "#reset"

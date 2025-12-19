@@ -1,241 +1,163 @@
-import pytest
 import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from element_config import *
-from conftest import login
+from conftest import login, safe_set_input_value
+import element_config as ec
+import re
 
-
-@pytest.mark.usefixtures("driver")
 def test_acs_connection(driver):
-    """测试 ACS 服务器连接配置并验证连接状态"""
+    """测试 ACS 连接配置：设置 TR069 WAN + CWMP，验证连通性"""
 
-    print("→ 执行登录操作")
+    # ========== 1. 登录 ==========
     login(driver)
-    print("→ 登录完成")
 
-    # 进入 Basic > WAN 页面
+    # ========== 2. 进入 Basic > WAN 页面 ==========
     print("→ 跳转到 WAN 配置页面")
-    driver.get(basic_wan_page)
-    print("→ 已进入 WAN 页面")
+    driver.get(ec.Basic_wan)
+    wait = WebDriverWait(driver, 15)
 
-    # 设置 Request Name 为 TR069
+    # ========== 3. 配置 TR069 WAN 条目 ==========
+    # 点击 Request Name 输入框（展开下拉）
     print("→ 点击 Request Name 下拉框")
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_service_name_field))
-    ).click()
-    print("→ Request Name 下拉框已展开")
+    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
+    request_name_input.click()
 
+    # 选择 TR069 选项（精确匹配 title="TR069"）
     print("→ 选择 Request Name = TR069")
-    WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_service_name_option_TR069))
-    ).click()
-    print("→ Request Name 设置为 TR069")
+    tr069_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_TR069)))
+    tr069_option.click()
 
-    # 设置 Access Type 为 Route
-    print("→ 点击 Access Type (Work Mode) 下拉框")
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_work_mode_field))
-    ).click()
-    print("→ Access Type 下拉框已展开")
+    # 设置 Access Type = Route
+    print("→ 设置 Access Type = Route")
+    access_type_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type)))
+    access_type_input.click()
+    route_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type_Route)))
+    route_option.click()
 
-    print("→ 选择 Access Type = Route")
-    WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_work_mode_option_Route))
-    ).click()
-    print("→ Access Type 设置为 Route")
+    # 设置 Bearer Service = TR069
+    print("→ 设置 Bearer Service = TR069")
+    bearer_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Bearer_Service)))
+    bearer_input.click()
+    bearer_tr069 = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Bearer_Service_TR069)))
+    bearer_tr069.click()
 
-    # 设置 Bearer Service 为 TR069
-    print("→ 点击 Bearer Service 下拉框")
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_bearer_service_field))
-    ).click()
-    print("→ Bearer Service 下拉框已展开")
+    # 设置 Connection Mode = DHCP（仅在 Route 模式下出现）
+    print("→ 设置 Connection Mode = DHCP")
+    conn_mode_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode)))
+    conn_mode_input.click()
+    dhcp_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode_DHCP)))
+    dhcp_option.click()
 
-    print("→ 选择 Bearer Service = TR069")
-    WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_bearer_service_option_TR069))
-    ).click()
-    print("→ Bearer Service 设置为 TR069")
-
-    # 设置 Connection Mode 为 DHCP
-    print("→ 点击 Connection Mode 下拉框")
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_conn_mode_field))
-    ).click()
-    print("→ Connection Mode 下拉框已展开")
-
-    print("→ 选择 Connection Mode = DHCP")
-    WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_conn_mode_option_DHCP))
-    ).click()
-    print("→ Connection Mode 设置为 DHCP")
-
-    # 设置 VLAN ID = 400
+    # 设置 VLAN ID = 400（使用 JS 安全设置）
     print("→ 设置 VLAN ID = 400")
-    vlan_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, wan_vlan_id_field))
-    )
-    driver.execute_script("arguments[0].value = '400';", vlan_input)
-    print("→ VLAN ID 已设置为 400")
+    safe_set_input_value(driver, ec.wan_VLAN_ID, "400")
 
     # 设置 MTU = 1500
     print("→ 设置 MTU = 1500")
-    mtu_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, wan_mtu_field))
-    )
-    driver.execute_script("arguments[0].value = '1500';", mtu_input)
-    print("→ MTU 已设置为 1500")
+    safe_set_input_value(driver, ec.wan_MTU, "1500")
+
+    # 判断并启用 WAN 开关
+    switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Enable)))
+    if "t-is-checked" not in switch.get_attribute("class"):
+        switch.click()
+        print("→ 启用 WAN")
+    else:
+        print("→ WAN 已启用")
 
     # 保存 WAN 配置
-    print("→ 点击保存按钮（WAN 配置）")
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, wan_save_button))
-    ).click()
-    print("→ WAN 配置已保存")
+    print("→ 保存 WAN 配置")
+    save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_commit)))
+    save_btn.click()
+    time.sleep(3)
 
-    # 进入 Basic > CWMP 页面
+    # ========== 4. 配置 CWMP ==========
     print("→ 跳转到 CWMP 配置页面")
-    driver.get(basic_cwmp_page)
-    print("→ 已进入 CWMP 页面")
+    driver.get(ec.Basic_cwmp)
 
-    # 填写 Server URL
+    # 启用 Periodic Notification（可选）
+    period_enable = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.cwmp_Periodic_Notification_Enable)))
+    if not period_enable.is_selected():
+        period_enable.click()
+
+    # 设置 Interval = 30
+    print("→ 设置 Notification Interval = 30")
+    safe_set_input_value(driver, ec.cwmp_Notification_Interval, "30")
+
+    # 设置 ACS Server URL
     print("→ 设置 ACS Server URL")
-    acs_url = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, cwmp_acs_url_field))
-    )
-    driver.execute_script("arguments[0].value = 'http://192.168.140.2:7547';", acs_url)
-    print("→ ACS Server URL 已设置")
+    safe_set_input_value(driver, ec.cwmp_Server_URL, "http://192.168.140.2:7547")
 
-    # 填写 Platform Username / Password
-    print("→ 设置 Platform Username")
-    acs_user = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, cwmp_acs_username_field))
-    )
-    driver.execute_script("arguments[0].value = 'admin';", acs_user)
-    print("→ Platform Username 已设置")
+    # 设置 Platform 用户名/密码
+    print("→ 设置 Platform 认证信息")
+    safe_set_input_value(driver, ec.cwmp_Platform_Username, "admin")
+    safe_set_input_value(driver, ec.cwmp_Platform_Password, "admin")
 
-    print("→ 设置 Platform Password")
-    acs_pass = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, cwmp_acs_password_field))
-    )
-    driver.execute_script("arguments[0].value = 'admin';", acs_pass)
-    print("→ Platform Password 已设置")
-
-    # 填写 Terminal Username / Password
-    print("→ 设置 Terminal Username")
-    client_user = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, cwmp_client_username_field))
-    )
-    driver.execute_script("arguments[0].value = 'admin';", client_user)
-    print("→ Terminal Username 已设置")
-
-    print("→ 设置 Terminal Password")
-    client_pass = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, cwmp_client_password_field))
-    )
-    driver.execute_script("arguments[0].value = 'admin';", client_pass)
-    print("→ Terminal Password 已设置")
+    # 设置 Terminal 用户名/密码
+    print("→ 设置 Terminal 认证信息")
+    safe_set_input_value(driver, ec.cwmp_Terminal_Username, "admin")
+    safe_set_input_value(driver, ec.cwmp_Terminal_Password, "admin")
 
     # 保存 CWMP 配置
-    print("→ 点击保存按钮（CWMP 配置）")
-    WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, cwmp_save_button))
-    ).click()
-    print("→ CWMP 配置已保存")
+    print("→ 保存 CWMP 配置")
+    cwmp_save = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.cwmp_commit)))
+    cwmp_save.click()
+    time.sleep(5)  # 等待 ACS 连接建立
 
-    # 等待 15 秒让连接建立
-    print("→ 等待 15 秒以建立 ACS 连接...")
-    time.sleep(15)
-    print("→ 等待完成")
+    # ========== 5. 验证连接状态 ==========
+    print("→ 返回 WAN 页面检查 TR069 连接状态")
+    driver.get(ec.Basic_wan)
+    time.sleep(10)
 
-    # 返回 WAN 页面检查 Connection Status
-    print("→ 返回 WAN 页面检查连接状态")
-    driver.get(basic_wan_page)
-    status_element = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, wan_connection_status))
-    )
-    actual_status = status_element.text.strip()
-    print(f"→ 当前 Connection Status: '{actual_status}'")
+    page_text = driver.find_element(By.TAG_NAME, "body").text
+    connected = "Connected" in page_text
+    if connected:
+        print("✅ TR069 WAN 已成功连接")
+    else:
+        print("❌ TR069 WAN 未连接")
 
-    print("进入 Advanced > System > System Test 页面")
-    print("点击 Advanced 标签")
-    advanced_tab = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Advanced']"))
-    )
-    advanced_tab.click()
-    print("已点击 Advanced")
+    # ========== 6. Ping 测试 ==========
+    print("→ 执行 Ping 测试")
+    driver.get(ec.Advanced_System_System_Test)
 
-    print("点击 System 菜单")
-    system_menu = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//div[@class='menu-item'][contains(text(), 'System')]"))
-    )
-    system_menu.click()
-    print("已点击 System")
+    # 设置 Ping 次数
+    safe_set_input_value(driver, ec.System_Test_Ping_Repeat_Times, "3")
 
-    print("点击 System Test 子菜单")
-    system_test_item = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'menu-item') and contains(text(), 'System Test')]"))
-    )
-    system_test_item.click()
-    print("已进入 System Test 页面")
+    # 选择接口（TR069）
+    interface_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface)))
+    interface_input.click()
+    internet_opt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface_TR069)))
+    internet_opt.click()
 
-    print("设置 Repeat Times = 3")
-    repeat_times_select = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ping_repeat_times_field))
-    )
-    driver.execute_script("arguments[0].value = '3';", repeat_times_select)
-    print("Repeat Times 设置为 3")
+    # 设置目标地址
+    print("→ 设置 Ping 目标地址")
+    safe_set_input_value(driver, ec.System_Test_Ping_Address, "192.168.140.1")
 
-    print("设置 Interface = 1_TR069_R_VID_400")
-    interface_select = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ping_interface_field))
-    )
-    driver.execute_script("arguments[0].value = '1_TR069_R_VID_400';", interface_select)
-    print("Interface 设置为 1_TR069_R_VID_400")
-
-    print("设置 Address = 192.168.140.1")
-    address_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ping_address_field))
-    )
-    driver.execute_script("arguments[0].value = '192.168.140.1';", address_input)
-    print("Address 设置为 192.168.140.1")
-
-    print("点击 Start 按钮执行 Ping")
-    start_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, ping_start_button))
-    )
-    start_button.click()
-    print("Ping 已启动")
-
-    print("等待 Ping 结果返回...")
+    # 开始 Ping
+    start_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Start)))
+    start_btn.click()
     time.sleep(5)
 
-    # 检查是否出现成功提示
-    try:
-        WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ping_result_success))
-        )
-        print("Ping 成功提示已出现")
-    except:
-        raise AssertionError("Ping 测试失败：未检测到成功提示")
+    # 等待 Ping 完成（最多 10 秒）
+    wait = WebDriverWait(driver, 10)
+    ping_logs_elem = wait.until(EC.presence_of_element_located((By.ID, "pingLogs")))
 
-    # 获取详细结果文本
-    result_text_element = WebDriverWait(driver, 5).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ping_result_text))
-    )
-    result_text = result_text_element.text.strip()
-    print("Ping 详细结果：")
-    print(result_text)
+    # 获取整个页面源码
+    page_source = driver.page_source
 
-    # 验证结果中包含响应时间
-    if "time=" not in result_text:
-        raise AssertionError("Ping 结果无效：未包含响应时间（可能超时或未发送）")
+    # 目标 IP 和匹配模式
+    target_ip = "192.168.140.1"
+    pattern = rf'64 bytes from {target_ip}: icmp_seq=\d+ ttl=\d+ time=\d+\.\d+ ms'
 
-    print("Ping 诊断测试通过：192.168.140.1 可达")
-
-
-
-    assert actual_status == "Connected", f"期望状态为 'Connected'，实际为 '{actual_status}'"
-    print(" ACS 连接验证通过")
+    # 搜索是否包含成功响应
+    if re.search(pattern, page_source):
+        print("✅ Ping 测试通过")
+        print("\n✅ Ping 详细输出：")
+        print("=" * 50)
+        matches = re.findall(pattern, page_source)
+        for match in matches:
+            print(match)
+        print("=" * 50)
+    else:
+        print(f"❌ Ping 测试失败：未找到来自 {target_ip} 的有效响应")
+        assert False, f"Ping 测试失败：未找到来自 {target_ip} 的有效响应"

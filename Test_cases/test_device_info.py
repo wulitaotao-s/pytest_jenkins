@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from conftest import login
+from conftest import login, toggle_switch
 
 @pytest.mark.usefixtures("driver")
 def test_device_information_direct(driver):

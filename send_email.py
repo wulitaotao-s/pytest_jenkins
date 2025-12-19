@@ -90,15 +90,11 @@ def send_test_summary():
                 msg.attach(part)
 
     # 6. 发送邮件
-    try:
-        server = smtplib.SMTP_SSL('smtp.qq.com', 465)
-        server.login(qq_email, qq_auth_code)
-        server.send_message(msg)
-        server.quit()
-        print("邮件发送成功！收件人:", recipient)
-    except Exception as e:
-        print("邮件发送失败:", str(e))
-        exit(1)
+    server = smtplib.SMTP_SSL('smtp.qq.com', 465)
+    server.login(qq_email, qq_auth_code)
+    server.send_message(msg)
+    server.quit()
+    print("邮件发送成功！收件人:", recipient)
 
 
 if __name__ == '__main__':
