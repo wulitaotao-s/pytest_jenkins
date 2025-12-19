@@ -7,6 +7,7 @@ pipeline {
         RECIPIENT = '2466065809@qq.com'
         REPORT_DIR = 'D:\\pytest_jenkins\\report'
         JSON_REPORT = 'D:\\pytest_jenkins\\report\\test_result.json'
+        LOG_FILE = 'D:\\pytest_jenkins\\report\\test_run.log'  // 与 run_all_tests.py 一致
     }
 
     stages {
@@ -32,15 +33,11 @@ pipeline {
 
         stage('Run Tests & Generate Reports') {
             steps {
-                powershell '''
-                    $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-                    $logFile = "D:\\pytest_jenkins\\report\\${timestamp}.log"
-                    $jsonReport = "D:\\pytest_jenkins\\report\\test_result.json"
+                // 直接运行主控脚本，它内部会调用 pytest 并生成 log + json
+                bat 'python run_all_tests.py'
 
-                    pytest -v -s --json-report --json-report-file="$jsonReport" Test_cases | Out-File -FilePath $logFile -Encoding UTF8
-
-                    Write-Host "测试完成，日志已保存至: $logFile"
-                '''
+                // 可选：打印日志末尾便于调试
+                bat 'type "${LOG_FILE}" | findstr /C:"测试结束时间"'
             }
         }
     }
