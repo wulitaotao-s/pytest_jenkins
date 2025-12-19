@@ -37,7 +37,7 @@ pipeline {
                     $logFile = "D:\\pytest_jenkins\\report\\${timestamp}.log"
                     $jsonReport = "D:\\pytest_jenkins\\report\\test_result.json"
 
-                    pytest -v -s --json-report --json-report-file="$jsonReport" Test_cases/test_device_info.py | Out-File -FilePath $logFile -Encoding UTF8
+                    pytest -v -s --json-report --json-report-file="$jsonReport" Test_cases | Out-File -FilePath $logFile -Encoding UTF8
 
                     Write-Host "测试完成，日志已保存至: $logFile"
                 '''
