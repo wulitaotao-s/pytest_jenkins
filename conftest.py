@@ -178,12 +178,12 @@ def restart_test_nic_and_ping() -> bool:
 
     # 🔹 完整打印 ping 的输出（stdout + stderr）
     print("\n" + "="*60)
-    print("📊 Ping 命令执行结果:")
+    print("Ping 命令执行结果:")
     print("="*60)
     if res.stdout.strip():
         print(res.stdout)
     if res.stderr.strip():
-        print("⚠️ 标准错误输出（stderr）:")
+        print("标准错误输出（stderr）:")
         print(res.stderr)
     print("="*60)
 

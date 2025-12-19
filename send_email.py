@@ -11,6 +11,7 @@ import io
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+
 def parse_log_filename(filename):
     """尝试从文件名解析时间，格式：2025-12-18_15-30-45.log"""
     if not filename.endswith(".log"):
@@ -21,6 +22,7 @@ def parse_log_filename(filename):
         return dt
     except ValueError:
         return None
+
 
 def send_test_summary():
     # 从环境变量读取配置

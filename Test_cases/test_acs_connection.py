@@ -112,9 +112,9 @@ def test_acs_connection(driver):
     page_text = driver.find_element(By.TAG_NAME, "body").text
     connected = "Connected" in page_text
     if connected:
-        print("✅ TR069 WAN 已成功连接")
+        print("TR069 WAN 已成功连接")
     else:
-        print("❌ TR069 WAN 未连接")
+        print("TR069 WAN 未连接")
 
     # ========== 6. Ping 测试 ==========
     print("→ 执行 Ping 测试")
@@ -151,13 +151,13 @@ def test_acs_connection(driver):
 
     # 搜索是否包含成功响应
     if re.search(pattern, page_source):
-        print("✅ Ping 测试通过")
-        print("\n✅ Ping 详细输出：")
+        print("Ping 测试通过")
+        print("\nPing 详细输出：")
         print("=" * 50)
         matches = re.findall(pattern, page_source)
         for match in matches:
             print(match)
         print("=" * 50)
     else:
-        print(f"❌ Ping 测试失败：未找到来自 {target_ip} 的有效响应")
+        print(f"Ping 测试失败：未找到来自 {target_ip} 的有效响应")
         assert False, f"Ping 测试失败：未找到来自 {target_ip} 的有效响应"

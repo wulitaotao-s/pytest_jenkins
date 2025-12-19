@@ -35,4 +35,4 @@ def test_device_information_direct(driver):
             value = cells[1].text.strip()
             print(f"{key}: {value}")
 
-    print("✅ 测试完成！")
+    print("测试完成！")

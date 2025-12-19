@@ -121,19 +121,19 @@ def test_wan_static_ping_jd(driver):
     pattern = r'64 bytes from \d+\.\d+\.\d+\.\d+: icmp_seq=\d+ ttl=\d+ time=\d+\.\d+ ms'
 
     if re.search(pattern, page_source):
-        print("✅ Ping www.jd.com 成功")
-        print("\n✅ Ping 详细输出：")
+        print("Ping www.jd.com 成功")
+        print("\nPing 详细输出：")
         print("=" * 50)
         matches = re.findall(pattern, page_source)
         for match in matches:
             print(match)
         print("=" * 50)
     else:
-        print("❌ Ping www.jd.com 失败：未收到有效响应")
+        print("Ping www.jd.com 失败：未收到有效响应")
         assert False, "Ping www.jd.com 失败：未收到有效响应"
 
     # ========== 6. 检查下挂设备是否可访问互联网 ==========
-    print("→ 检查下挂设备是否可访问互联网...")
+    print("检查下挂设备是否可访问互联网...")
     if not restart_test_nic_and_ping():
-        print("❌ 网卡重启或 Ping www.jd.com 失败，测试终止")
+        print("网卡重启或 Ping www.jd.com 失败，测试终止")
         assert False, "本地网络环境异常：Test 网卡无法正常通信"
