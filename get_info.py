@@ -55,16 +55,10 @@ def main():
 
         # 获取整个 body 文本
         page_text = driver.find_element(By.TAG_NAME, "body").text
-        print(f"页面文本长度: {len(page_text)} 字符", file=sys.stderr)
-        if len(page_text) < 100:
-            print("警告：页面文本过短，可能未加载完整", file=sys.stderr)
-        else:
-            print("页面文本示例（前 200 字）:", file=sys.stderr)
-            print(page_text[:200], file=sys.stderr)
 
         # 提取设备信息
-        device_match = re.search(r"Device\s+Type\s*[:：]?\s*([A-Z0-9\-_]+)", page_text, re.IGNORECASE)
-        version_match = re.search(r"Software\s+Version\s*[:：]?\s*([A-Za-z0-9\.\-_]+)", page_text, re.IGNORECASE)
+        device_match = re.search(r"Device\s+Type\s+(\S+)", page_text, re.IGNORECASE)
+        version_match = re.search(r"Software\s+Version\s+(\S+)", page_text, re.IGNORECASE)
 
         device_type = device_match.group(1).strip() if device_match else "Unknown"
         software_version = version_match.group(1).strip() if version_match else "Unknown"
