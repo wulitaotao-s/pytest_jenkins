@@ -6,8 +6,6 @@ pipeline {
         QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
         RECIPIENT = '2466065809@qq.com'
         REPORT_ROOT = "${WORKSPACE}\\report"
-        DEVICE_TYPE = "Unknown"
-        SOFTWARE_VERSION = "Unknown"
         TEST_OUTPUT_FILE = ""
     }
 
@@ -33,45 +31,39 @@ pipeline {
             }
         }
 
-        stage('Get Device Info') {
-            steps {
-                script {
-                    def infoResult = bat(
-                        script: 'python get_info.py',
-                        returnStdout: true
-                    ).trim()
-
-                    def deviceMatch = infoResult =~ /Device Type:\s*(.+)/
-                    def versionMatch = infoResult =~ /Software Version:\s*(.+)/
-
-                    env.DEVICE_TYPE = deviceMatch ? deviceMatch[0][1].trim() : "Unknown"
-                    env.SOFTWARE_VERSION = versionMatch ? versionMatch[0][1].trim() : "Unknown"
-
-                    def timestamp = new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))
-                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins\\Reports\\${timestamp} ${env.DEVICE_TYPE} ${env.SOFTWARE_VERSION}.log"
-
-                    echo "Device Type: ${env.DEVICE_TYPE}"
-                    echo "Software Version: ${env.SOFTWARE_VERSION}"
-                    echo "Log file: ${env.TEST_OUTPUT_FILE}"
-                }
-            }
-        }
-
         stage('Run All Tests') {
             steps {
                 script {
+                    // 使用时间戳生成日志文件名，不依赖设备信息
+                    def timestamp = new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))
+                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins\\Reports\\test_report_${timestamp}.log"
+
+                    // 确保目录存在
                     bat 'mkdir "D:\\pytest_jenkins\\Reports" 2>nul || exit /b 0'
+
+                    // 运行测试并重定向输出到日志文件
                     bat "python run_all_tests.py 1>\"${env.TEST_OUTPUT_FILE}\" 2>&1"
 
-                    def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
-                    echo content
+                    // 安全读取日志内容（用于 Jenkins 控制台显示）
+                    if (fileExists(env.TEST_OUTPUT_FILE)) {
+                        def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
+                        echo "=== Test Log ===\n${content}\n=== End of Log ==="
+                    } else {
+                        echo "Warning: Log file not found at ${env.TEST_OUTPUT_FILE}"
+                        // 创建占位日志，确保 send_email.py 不崩溃
+                        bat "echo [ERROR] Test execution failed or log was not generated. > \"${env.TEST_OUTPUT_FILE}\""
+                    }
                 }
             }
         }
 
         stage('Send Email Report') {
             steps {
-                bat 'python send_email.py'
+                // 将日志路径传给 send_email.py（通过环境变量或直接读固定目录）
+                bat """
+                    set TEST_OUTPUT_FILE=${env.TEST_OUTPUT_FILE}
+                    python send_email.py
+                """
             }
         }
     }
@@ -79,6 +71,7 @@ pipeline {
     post {
         always {
             script {
+                // 归档日志（如果存在）
                 if (env.TEST_OUTPUT_FILE && fileExists(env.TEST_OUTPUT_FILE)) {
                     archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
                 }
