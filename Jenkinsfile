@@ -52,19 +52,27 @@ pipeline {
                 }
             }
         }
-
         stage('Run All Tests') {
             steps {
                 script {
-                    bat "python run_all_tests.py > \"${env.TEST_OUTPUT_FILE}\" 2>&1"
+                    def logDir = "D:\\pytest_jenkins\\Reports"
+                    bat("mkdir \"${logDir}\" 2>nul || exit /b 0")
+                    def logFile = "${logDir}\\test_output_${BUILD_NUMBER}.log"
+
+                    // 先运行测试并输出到日志
+                    bat("python run_all_tests.py 1>\"${logFile}\" 2>&1")
+
+                    // 再读取日志并打印到控制台（可选）
+                    def content = readFile("${logFile}")
+                    echo(content)
                 }
             }
         }
 
-        stage('Send Email Report') {
-            steps {
-                bat 'python send_email.py'
+            stage('Send Email Report') {
+                steps {
+                    bat 'python send_email.py'
+                }
             }
         }
     }
-}
