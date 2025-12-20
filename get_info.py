@@ -37,19 +37,19 @@ def main():
         print("=== 页面原始文本 ===", file=sys.stderr)
         print(page_text[:500], file=sys.stderr)  # 前 500 字足够看结构
 
-        # ✅ 最简正则：匹配 "Device Type XXX" 和 "Software Version YYY"
-        device_match = re.search(r"Device\s+Type\s+(\S+)", page_text, re.IGNORECASE)
-        version_match = re.search(r"Software\s+Version\s+(\S+)", page_text, re.IGNORECASE)
+        # ✅ 关键：匹配无冒号的格式 "Device Type FT-35"
+        device_match = re.search(r"Device\s+Type\s+(\S+)", page_text)
+        version_match = re.search(r"Software\s+Version\s+(\S+)", page_text)
 
-        device_type = device_match.group(1).strip() if device_match else "Unknown"
-        software_version = version_match.group(1).strip() if version_match else "Unknown"
+        device_type = device_match.group(1) if device_match else "Unknown"
+        software_version = version_match.group(1) if version_match else "Unknown"
 
-        # ✅ 只有这两行输出到 stdout，供 Jenkins 捕获
+        # ✅ 只有这两行输出到 stdout！
         print(f"Device Type: {device_type}")
         print(f"Software Version: {software_version}")
 
     except Exception as e:
-        print(f"Error in get_info: {e}", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
         print("Device Type: Unknown")
         print("Software Version: Unknown")
     finally:
