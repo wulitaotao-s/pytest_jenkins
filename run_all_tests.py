@@ -14,7 +14,7 @@ LOG_FILE = os.environ.get("LOG_FILE", os.path.join(REPORT_DIR, "test_run.log"))
 # 确保目录存在
 os.makedirs(REPORT_DIR, exist_ok=True)
 
-# 设置 UTF-8 输出编码（防止乱码）
+# 设置 UTF-8 输出编码（防止中文乱码）
 if sys.version_info >= (3, 7):
     os.environ["PYTHONIOENCODING"] = "utf-8"
 
@@ -31,7 +31,7 @@ def main():
     start_time = datetime.now()
     timestamp_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # 写入日志文件
+    # 初始化日志文件
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         f.write(f"测试开始时间: {timestamp_str}\n")
         f.write("=" * 60 + "\n\n")
@@ -50,39 +50,58 @@ def main():
 
     printed_modules = set()
 
-    # 实时读取输出并写入日志
-    with open(LOG_FILE, "a", encoding="utf-8") as log_f:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace"
-        )
+    # 启动子进程并实时捕获输出
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=1,  # 行缓冲
+        universal_newlines=True
+    )
 
-        for line in iter(process.stdout.readline, ""):
-            module = extract_module_name(line)
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as log_f:
+            for line in iter(process.stdout.readline, ""):
+                module = extract_module_name(line)
 
-            if module and module not in printed_modules:
-                separator = "\n" + "=" * 60 + "\n"
-                title = f">>> 开始执行测试模块: {module}\n"
+                if module and module not in printed_modules:
+                    separator = "\n" + "=" * 60 + "\n"
+                    title = f">>> 开始执行测试模块: {module}\n"
 
-                print(separator, end="")
-                print(title, end="")
-                print(separator, end="")
+                    # 控制台输出
+                    print(separator, end="")
+                    print(title, end="")
+                    print(separator, end="")
 
-                log_f.write(separator)
-                log_f.write(title)
-                log_f.write(separator)
+                    # 写入日志
+                    log_f.write(separator)
+                    log_f.write(title)
+                    log_f.write(separator)
+                    log_f.flush()
+                    printed_modules.add(module)
+
+                # 写入原始行（含错误、堆栈等）
+                log_f.write(line)
                 log_f.flush()
-                printed_modules.add(module)
 
-            log_f.write(line)
-            log_f.flush()
+    except Exception as e:
+        print(f"⚠️ 读取 pytest 输出时发生异常: {e}")
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"\n⚠️ 异常: {e}\n")
 
-        process.wait()
+    finally:
+        process.wait()  # 等待 pytest 结束
+        # 读取可能残留的输出（确保不丢数据）
+        remaining = process.stdout.read()
+        if remaining:
+            with open(LOG_FILE, "a", encoding="utf-8") as f:
+                f.write(remaining)
+                f.flush()
 
+    # 写入总结信息
     end_time = datetime.now()
     duration = end_time - start_time
     summary = (
@@ -96,6 +115,9 @@ def main():
     print(summary)
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(summary)
+
+    # 关键：将 pytest 的退出码传递给操作系统
+    sys.exit(process.returncode)
 
 
 if __name__ == "__main__":
