@@ -2,12 +2,15 @@ pipeline {
     agent any
 
     environment {
-        QQ_EMAIL = '2466065809@qq.com'
+        // 改为相对路径：基于 Jenkins 工作区
+        REPORT_DIR   = "${WORKSPACE}\\report"
+        JSON_REPORT  = "${WORKSPACE}\\report\\test_result.json"
+        LOG_FILE     = "${WORKSPACE}\\report\\test_run.log"
+
+        // 邮件配置（保持不变）
+        QQ_EMAIL     = '2466065809@qq.com'
         QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
-        RECIPIENT = '2466065809@qq.com'
-        REPORT_DIR = 'D:\\pytest_jenkins\\report'
-        JSON_REPORT = 'D:\\pytest_jenkins\\report\\test_result.json'
-        LOG_FILE = 'D:\\pytest_jenkins\\report\\test_run.log'  // 与 run_all_tests.py 一致
+        RECIPIENT    = '2466065809@qq.com'
     }
 
     stages {
@@ -19,7 +22,8 @@ pipeline {
 
         stage('Create Report Directory') {
             steps {
-                bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
+                // 创建目录，即使存在也不报错
+                bat 'mkdir "%REPORT_DIR%" 2>nul || exit /b 0'
             }
         }
 
@@ -33,11 +37,15 @@ pipeline {
 
         stage('Run Tests & Generate Reports') {
             steps {
-                // 直接运行主控脚本，它内部会调用 pytest 并生成 log + json
+                // 主测试脚本（它内部调用 pytest）
                 bat 'python run_all_tests.py'
 
-                // 可选：打印日志末尾便于调试
-                bat 'type "${LOG_FILE}" | findstr /C:"测试结束时间"'
+                // 安全地打印日志末尾（不因 findstr 失败而中断）
+                bat '''
+                    type "%LOG_FILE%" | findstr /C:"测试结束时间" >nul 2>&1 || (
+                        echo (未找到"测试结束时间"，但继续执行)
+                    )
+                '''
             }
         }
     }
@@ -47,6 +55,7 @@ pipeline {
             script {
                 echo '正在解析测试结果并发送邮件...'
             }
+            // 发送邮件（假设 send_email.py 能处理成功/失败）
             bat 'python send_email.py'
         }
     }
