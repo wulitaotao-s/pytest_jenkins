@@ -6,8 +6,6 @@ pipeline {
         QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
         RECIPIENT = '2466065809@qq.com'
         REPORT_DIR = "D:\\pytest_jenkins\\Reports"
-        TEST_OUTPUT_FILE = ""
-        HTML_REPORT_FILE = ""
     }
 
     stages {
@@ -67,8 +65,6 @@ pipeline {
         stage('Send Email Report') {
             steps {
                 bat """
-                    set TEST_OUTPUT_FILE=${env.TEST_OUTPUT_FILE}
-                    set HTML_REPORT_FILE=${env.HTML_REPORT_FILE}
                     python send_email.py
                 """
             }
