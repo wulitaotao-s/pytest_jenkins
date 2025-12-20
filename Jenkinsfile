@@ -36,7 +36,7 @@ pipeline {
         stage('Run Tests and Send Email') {
             steps {
                 // 只调用一个脚本
-                bat 'python combined_test_and_email.py'
+                bat 'python run_all_tests.py'
             }
         }
     }
