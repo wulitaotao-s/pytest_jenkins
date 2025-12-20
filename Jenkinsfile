@@ -67,7 +67,7 @@ pipeline {
         stage('Send Email Report') {
             steps {
                 bat """
-                    set TEST_OUTPUT_FILE=${env.TEST_OUTPUT FILE}
+                    set TEST_OUTPUT_FILE=${env.TEST_OUTPUT_FILE}
                     set HTML_REPORT_FILE=${env.HTML_REPORT_FILE}
                     python send_email.py
                 """
