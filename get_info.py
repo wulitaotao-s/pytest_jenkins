@@ -8,26 +8,15 @@ import re
 import sys
 import time
 
+
 def main():
     driver = None
     try:
         print("开始登录...", file=sys.stderr)
-
-        # 启动 Chrome（禁用 headless 先测试）
-        options = webdriver.ChromeOptions()
-        # options.add_argument("--headless")  # 先注释掉，看是否能成功
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--disable-extensions")
-        options.add_argument("--disable-plugins")
-
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome()
         base_url = ec.url_base
         login_username = ec.login_username
         login_password = ec.login_password
-
         driver.get(base_url)
         wait = WebDriverWait(driver, 60)  # 增加等待时间
 
