@@ -130,7 +130,7 @@ def main():
             f.write(output)
             f.write("\n" + "=" * 80 + "\n\n")
 
-    print(f"\n✅ All tests completed.")
+    print(f"\nAll tests completed.")
     print(f"Log saved to: {log_path}")
     print(f"Summary: {total_passed} passed, {total_failed} failed")
 
