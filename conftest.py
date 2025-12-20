@@ -154,7 +154,7 @@ def restart_test_nic_and_ping() -> bool:
     for attempt in range(10):
         res = run_cmd(f'netsh interface ip show config "{nic_name}"')
         if res.returncode != 0:
-            print("❌ 无法运行 netsh")
+            print("无法运行 netsh")
             return False
 
         # 匹配 IPv4 地址：支持中英文显示
@@ -189,8 +189,8 @@ def restart_test_nic_and_ping() -> bool:
 
     # === 5. 判断是否 ping 通 ===
     if "TTL=" in res.stdout or "time=" in res.stdout:
-        print("✅ Ping 成功！")
+        print(" Ping 成功！")
         return True
     else:
-        print("❌ Ping 失败：未收到有效响应")
+        print(" Ping 失败：未收到有效响应")
         return False
