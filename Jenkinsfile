@@ -2,15 +2,13 @@ pipeline {
     agent any
 
     environment {
-        // 改为相对路径：基于 Jenkins 工作区
-        REPORT_DIR   = "${WORKSPACE}\\report"
-        JSON_REPORT  = "${WORKSPACE}\\report\\test_result.json"
-        LOG_FILE     = "${WORKSPACE}\\report\\test_run.log"
-
-        // 邮件配置（保持不变）
+        // 邮件配置（使用凭据，不硬编码密码！）
         QQ_EMAIL     = '2466065809@qq.com'
-        QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
+        QQ_AUTH_CODE =   'tpyxgmecjqrndiif'
         RECIPIENT    = '2466065809@qq.com'
+
+        // 日志根目录（可选：使用工作区或固定盘符）
+        REPORT_ROOT  = "${WORKSPACE}\\report"  // 或保留 D:\\pytest_jenkins\\Reports
     }
 
     stages {
@@ -22,8 +20,7 @@ pipeline {
 
         stage('Create Report Directory') {
             steps {
-                // 创建目录，即使存在也不报错
-                bat 'mkdir "%REPORT_DIR%" 2>nul || exit /b 0'
+                bat 'mkdir "%REPORT_ROOT%" 2>nul || exit /b 0'
             }
         }
 
@@ -31,32 +28,16 @@ pipeline {
             steps {
                 bat 'python -m pip install --upgrade pip'
                 bat 'pip install -r requirements.txt'
-                bat 'pip install pytest-json-report'
+                bat 'pip install pytest'
+                // 不需要 pytest-json-report（除非你用它）
             }
         }
 
-        stage('Run Tests & Generate Reports') {
+        stage('Run Tests and Send Email') {
             steps {
-                // 主测试脚本（它内部调用 pytest）
-                bat 'python run_all_tests.py'
-
-                // 安全地打印日志末尾（不因 findstr 失败而中断）
-                bat '''
-                    type "%LOG_FILE%" | findstr /C:"测试结束时间" >nul 2>&1 || (
-                        echo (未找到"测试结束时间"，但继续执行)
-                    )
-                '''
+                // 只调用一个脚本
+                bat 'python combined_test_and_email.py'
             }
-        }
-    }
-
-    post {
-        always {
-            script {
-                echo '正在解析测试结果并发送邮件...'
-            }
-            // 发送邮件（假设 send_email.py 能处理成功/失败）
-            bat 'python send_email.py'
         }
     }
 }
