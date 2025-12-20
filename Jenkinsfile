@@ -7,6 +7,7 @@ pipeline {
         RECIPIENT = '2466065809@qq.com'
         REPORT_DIR = "D:\\pytest_jenkins\\Reports"
         TEST_OUTPUT_FILE = ""
+        HTML_REPORT_FILE = ""
     }
 
     stages {
@@ -27,32 +28,38 @@ pipeline {
             steps {
                 bat 'python -m pip install --upgrade pip'
                 bat 'pip install -r requirements.txt'
-                bat 'pip install pytest selenium beautifulsoup4'
             }
         }
 
-        stage('Run All Tests') {
+        stage('Run Pytest Tests') {
             steps {
                 script {
-                    // 使用时间戳命名日志文件，避免设备信息影响
+                    // 生成时间戳
                     def now = new Date()
                     def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
-                    env.TEST_OUTPUT_FILE = "${env.REPORT_DIR}\\test_report_${timestamp}.log"
+
+                    env.TEST_OUTPUT_FILE = "${env.REPORT_DIR}\\pytest_console_${timestamp}.log"
+                    env.HTML_REPORT_FILE = "${env.REPORT_DIR}\\report_${timestamp}.html"
 
                     // 确保目录存在
                     bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
 
-                    // 运行测试并重定向输出
-                    bat "python run_all_tests.py 1>\"${env.TEST_OUTPUT_FILE}\" 2>&1"
+                    // 直接运行 pytest，输出到日志，并生成 HTML 报告
+                    bat """
+                        python -m pytest Test_cases -v --tb=short ^
+                        --html="${HTML_REPORT_FILE}" ^
+                        --self-contained-html ^
+                        1>"${TEST_OUTPUT_FILE}" 2>&1
+                    """
 
-                    // 如果日志不存在，创建一个占位文件
+                    // 如果日志不存在，创建占位文件
                     if (!fileExists(env.TEST_OUTPUT_FILE)) {
-                        bat "echo [ERROR] Test execution failed or log not generated. > \"${env.TEST_OUTPUT_FILE}\""
+                        bat "echo [ERROR] Pytest did not generate console log. > \"${env.TEST_OUTPUT_FILE}\""
                     }
 
-                    // 读取日志内容并打印到控制台
+                    // 打印日志到 Jenkins 控制台
                     def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
-                    echo "=== Test Log ===\n${content}\n=== End ==="
+                    echo "=== Pytest Console Log ===\n${content}\n=== End ==="
                 }
             }
         }
@@ -60,7 +67,8 @@ pipeline {
         stage('Send Email Report') {
             steps {
                 bat """
-                    set TEST_OUTPUT_FILE=${env.TEST_OUTPUT_FILE}
+                    set TEST_OUTPUT_FILE=${env.TEST_OUTPUT FILE}
+                    set HTML_REPORT_FILE=${env.HTML_REPORT_FILE}
                     python send_email.py
                 """
             }
@@ -72,6 +80,9 @@ pipeline {
             script {
                 if (env.TEST_OUTPUT_FILE && fileExists(env.TEST_OUTPUT_FILE)) {
                     archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
+                }
+                if (env.HTML_REPORT_FILE && fileExists(env.HTML_REPORT_FILE)) {
+                    archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
                 }
             }
         }
