@@ -1,0 +1,99 @@
+Test Run Summary
+Start Time: 2025-12-20 15:41:59.020465
+Device Type: FT-35
+Software Version: V1.0.13
+Total Tests: 2 | Passed: 2 | Failed: 0
+================================================================================
+
+[PASSED] test_get_info.py
+------------------------------------------------------------
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.0.1, pluggy-1.6.0 -- D:\python_evn\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.7', 'Platform': 'Windows-10-10.0.19045-SP0', 'Packages': {'pytest': '9.0.1', 'pluggy': '1.6.0'}, 'Plugins': {'html': '4.1.1', 'json-report': '1.5.0', 'metadata': '3.1.1'}, 'CI': 'true', 'BUILD_NUMBER': '74', 'BUILD_ID': '74', 'BUILD_URL': 'http://127.0.0.1:8080/job/pytest-ci/74/', 'NODE_NAME': 'built-in', 'JOB_NAME': 'pytest-ci', 'BUILD_TAG': 'jenkins-pytest-ci-74', 'EXECUTOR_NUMBER': '1', 'JENKINS_URL': 'http://127.0.0.1:8080/', 'WORKSPACE': 'C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\pytest-ci', 'GIT_COMMIT': '902eecd8190b558a6fb11820febd8fbfde299725', 'GIT_URL': 'git@github.com:wulitaotao-s/pytest_jenkins.git', 'GIT_BRANCH': 'origin/master'}
+rootdir: C:\ProgramData\Jenkins\.jenkins\workspace\pytest-ci
+plugins: html-4.1.1, json-report-1.5.0, metadata-3.1.1
+collecting ... collected 1 item
+
+Test_cases/test_get_info.py::test_extract_device_info 开始登录...
+登录成功，进入首页
+=== 全文内容 ===
+Home
+Basic
+Advanced
+Network
+0.22 KB/s
+1.75 KB/s
+FT-35
+Device(1)
+Device Information
+VOIP Information
+PON Information
+CWMP Information
+Route Information
+ARP Information
+
+Device Type FT-35
+GPON SN SZYC6209B9BC
+Hardware Version V1.2
+Software Version V1.0.13
+MAC 5C:94:62:09:B9:BC
+CPU Usage 22 %
+Memory Usage 39 %
+Online Time 2 d 5 h 24 min 11 s
+Login Successfully!
+Device Type: FT-35
+Software Version: V1.0.13
+PASSED
+
+======================== 1 passed in 307.07s (0:05:07) ========================
+2025-12-20 15:47:02,606 - selenium.webdriver.common.selenium_manager - WARNING - Exception managing chrome: error decoding response body
+
+================================================================================
+
+[PASSED] test_acs_connection.py
+------------------------------------------------------------
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.0.1, pluggy-1.6.0 -- D:\python_evn\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.7', 'Platform': 'Windows-10-10.0.19045-SP0', 'Packages': {'pytest': '9.0.1', 'pluggy': '1.6.0'}, 'Plugins': {'html': '4.1.1', 'json-report': '1.5.0', 'metadata': '3.1.1'}, 'CI': 'true', 'BUILD_NUMBER': '74', 'BUILD_ID': '74', 'BUILD_URL': 'http://127.0.0.1:8080/job/pytest-ci/74/', 'NODE_NAME': 'built-in', 'JOB_NAME': 'pytest-ci', 'BUILD_TAG': 'jenkins-pytest-ci-74', 'EXECUTOR_NUMBER': '1', 'JENKINS_URL': 'http://127.0.0.1:8080/', 'WORKSPACE': 'C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\pytest-ci', 'GIT_COMMIT': '902eecd8190b558a6fb11820febd8fbfde299725', 'GIT_URL': 'git@github.com:wulitaotao-s/pytest_jenkins.git', 'GIT_BRANCH': 'origin/master'}
+rootdir: C:\ProgramData\Jenkins\.jenkins\workspace\pytest-ci
+plugins: html-4.1.1, json-report-1.5.0, metadata-3.1.1
+collecting ... collected 1 item
+
+Test_cases/test_acs_connection.py::test_acs_connection 开始登录...
+登录成功，进入首页
+跳转到 WAN 配置页面
+点击 Request Name 下拉框
+选择 Request Name = TR069
+设置 Access Type = Route
+设置 Bearer Service = TR069
+设置 Connection Mode = DHCP
+设置 VLAN ID = 400
+设置 MTU = 1500
+WAN 已启用
+保存 WAN 配置
+跳转到 CWMP 配置页面
+设置 Notification Interval = 30
+设置 ACS Server URL
+设置 Platform 认证信息
+设置 Terminal 认证信息
+保存 CWMP 配置
+返回 WAN 页面检查 TR069 连接状态
+TR069 WAN 已成功连接
+执行 Ping 测试
+设置 Ping 目标地址
+Ping 测试通过
+
+Ping 详细输出：
+==================================================
+64 bytes from 192.168.140.1: icmp_seq=0 ttl=64 time=3.6 ms
+64 bytes from 192.168.140.1: icmp_seq=1 ttl=64 time=0.8 ms
+64 bytes from 192.168.140.1: icmp_seq=2 ttl=64 time=0.8 ms
+==================================================
+PASSED
+
+======================== 1 passed in 296.62s (0:04:56) ========================
+
+================================================================================
+
