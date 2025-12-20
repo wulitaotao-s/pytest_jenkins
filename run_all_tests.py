@@ -5,24 +5,20 @@ import subprocess
 import datetime
 from pathlib import Path
 
-# === 配置路径 ===
-BASE_DIR = Path(__file__).parent.resolve()
-TEST_DIR = BASE_DIR / "Test_cases"
-REPORTS_DIR = BASE_DIR / "Reports"
-REPORTS_DIR.mkdir(exist_ok=True)
+# 固定报告目录（绝对路径）
+REPORTS_DIR = Path("D:/pytest_jenkins/Reports")
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# === 全局变量：用于传递设备信息 ===
+# 全局设备信息
 DEVICE_TYPE = "UnknownDevice"
 SOFTWARE_VERSION = "UnknownVersion"
 
 
-def sanitize_filename_part(s: str) -> str:
-    """清理字符串，使其可作为文件名的一部分"""
+def sanitize_filename_part(s):
     return "".join(c if c.isalnum() or c in "._-" else "_" for c in s)
 
 
-def extract_device_info_from_output(output: str):
-    """从 pytest 输出中提取设备型号和软件版本"""
+def extract_device_info_from_output(output):
     global DEVICE_TYPE, SOFTWARE_VERSION
     for line in output.splitlines():
         if "Device Type:" in line:
@@ -36,8 +32,8 @@ def extract_device_info_from_output(output: str):
 
 
 def get_test_files_in_order():
-    """返回测试文件列表，确保 test_get_info.py 第一个"""
-    all_files = [f for f in os.listdir(TEST_DIR) if f.startswith("test_") and f.endswith(".py")]
+    test_dir = Path("Test_cases")
+    all_files = [f for f in os.listdir(test_dir) if f.startswith("test_") and f.endswith(".py")]
     ordered = []
     others = []
     for f in all_files:
@@ -56,50 +52,54 @@ def main():
 
     test_files = get_test_files_in_order()
     if not test_files:
-        print("No test files found in Test_cases/")
+        print("No test files found.")
         return
 
-    # 确保第一个是 test_get_info.py
     if test_files[0] != "test_get_info.py":
-        print("ERROR: test_get_info.py must be the first test file!")
+        print("Error: test_get_info.py must be first.")
         sys.exit(1)
 
     all_outputs = []
     total_passed = 0
     total_failed = 0
 
-    # === Step 1: 先运行 test_get_info.py 单独提取设备信息 ===
+    # Step 1: Run test_get_info.py first
     first_file = test_files[0]
-    print(f">>> Running device info extraction: {first_file}")
+    test_path = Path("Test_cases") / first_file
+    print(f"Running device info extraction: {first_file}")
+
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "-v", "-s", str(TEST_DIR / first_file)],
+        [sys.executable, "-m", "pytest", "-v", "-s", str(test_path)],
         capture_output=True,
         text=True,
         encoding="utf-8",
-        errors="replace"
+        errors="replace",
+        env=env
     )
     output = result.stdout + result.stderr
     all_outputs.append((first_file, result.returncode, output))
-
-    # 提取设备信息
     extract_device_info_from_output(output)
-    print(f"INFO: Extracted device info -> Type: {DEVICE_TYPE}, Version: {SOFTWARE_VERSION}")
+    print(f"Device Type: {DEVICE_TYPE}, Software Version: {SOFTWARE_VERSION}")
 
-    # 统计结果
     if result.returncode == 0:
         total_passed += 1
     else:
         total_failed += 1
 
-    # === Step 2: 运行其余测试 ===
+    # Step 2: Run other tests
     for filename in test_files[1:]:
-        print(f">>> Running test: {filename}")
+        test_path = Path("Test_cases") / filename
+        print(f"Running test: {filename}")
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-v", "-s", str(TEST_DIR / filename)],
+            [sys.executable, "-m", "pytest", "-v", "-s", str(test_path)],
             capture_output=True,
             text=True,
             encoding="utf-8",
-            errors="replace"
+            errors="replace",
+            env=env
         )
         output = result.stdout + result.stderr
         all_outputs.append((filename, result.returncode, output))
@@ -108,15 +108,15 @@ def main():
         else:
             total_failed += 1
 
-    # === Step 3: 生成日志文件名（现在已有设备信息！）===
+    # Step 3: Generate log file with device info
     safe_device = sanitize_filename_part(DEVICE_TYPE)
     safe_version = sanitize_filename_part(SOFTWARE_VERSION)
     log_filename = f"{timestamp_for_logname} {safe_device} {safe_version}.log"
     log_path = REPORTS_DIR / log_filename
 
-    # 写入完整日志
+    # Write log in UTF-8
     with open(log_path, "w", encoding="utf-8") as f:
-        f.write(f"Test Run Summary\n")
+        f.write("Test Run Summary\n")
         f.write(f"Start Time: {start_time}\n")
         f.write(f"Device Type: {DEVICE_TYPE}\n")
         f.write(f"Software Version: {SOFTWARE_VERSION}\n")
@@ -130,16 +130,15 @@ def main():
             f.write(output)
             f.write("\n" + "=" * 80 + "\n\n")
 
-    print(f"\nAll tests completed.")
     print(f"Log saved to: {log_path}")
     print(f"Summary: {total_passed} passed, {total_failed} failed")
 
-    # === Step 4: 发送邮件（传入日志路径）===
+    # Step 4: Send email
     try:
         from send_email import send_test_report_email
         send_test_report_email(str(log_path))
     except Exception as e:
-        print(f"WARNING: Failed to send email: {e}")
+        print(f"Failed to send email: {e}")
 
 
 if __name__ == "__main__":
