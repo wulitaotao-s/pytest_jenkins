@@ -1,0 +1,11 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.0.1, pluggy-1.6.0 -- D:\python_evn\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.7', 'Platform': 'Windows-10-10.0.19045-SP0', 'Packages': {'pytest': '9.0.1', 'pluggy': '1.6.0'}, 'Plugins': {'html': '4.1.1', 'json-report': '1.5.0', 'metadata': '3.1.1'}, 'CI': 'true', 'BUILD_NUMBER': '89', 'BUILD_ID': '89', 'BUILD_URL': 'http://127.0.0.1:8080/job/pytest-ci/89/', 'NODE_NAME': 'built-in', 'JOB_NAME': 'pytest-ci', 'BUILD_TAG': 'jenkins-pytest-ci-89', 'EXECUTOR_NUMBER': '1', 'JENKINS_URL': 'http://127.0.0.1:8080/', 'WORKSPACE': 'C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\pytest-ci', 'GIT_COMMIT': '1577dcfe0937bb41eeea3f3a42d9100d4c9623e0', 'GIT_URL': 'git@github.com:wulitaotao-s/pytest_jenkins.git', 'GIT_BRANCH': 'origin/master'}
+rootdir: C:\ProgramData\Jenkins\.jenkins\workspace\pytest-ci
+plugins: html-4.1.1, json-report-1.5.0, metadata-3.1.1
+collecting ... collected 1 item
+
+Test_cases/test_acs_connection.py::test_acs_connection PASSED            [100%]
+
+============================= 1 passed in 35.77s ==============================

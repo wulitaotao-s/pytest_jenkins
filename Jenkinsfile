@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        QQ_EMAIL       = '2466065809@qq.com'
-        QQ_AUTH_CODE   = 'tpyxgmecjqrndiif'
-        RECIPIENT      = '2466065809@qq.com'
-        REPORT_ROOT    = "${WORKSPACE}\\report"
-        DEVICE_TYPE    = "Unknown"
+        QQ_EMAIL = '2466065809@qq.com'
+        QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
+        RECIPIENT = '2466065809@qq.com'
+        REPORT_ROOT = "${WORKSPACE}\\report"
+        DEVICE_TYPE = "Unknown"
         SOFTWARE_VERSION = "Unknown"
-        TEST_OUTPUT_FILE = "${WORKSPACE}\\test_output.log"
+        TEST_OUTPUT_FILE = ""
     }
 
     stages {
@@ -21,6 +21,7 @@ pipeline {
         stage('Create Report Directory') {
             steps {
                 bat 'mkdir "%REPORT_ROOT%" 2>nul || exit /b 0'
+                bat 'mkdir "D:\\pytest_jenkins\\Reports" 2>nul || exit /b 0'
             }
         }
 
@@ -28,7 +29,7 @@ pipeline {
             steps {
                 bat 'python -m pip install --upgrade pip'
                 bat 'pip install -r requirements.txt'
-                bat 'pip install pytest selenium'
+                bat 'pip install pytest selenium beautifulsoup4'
             }
         }
 
@@ -40,39 +41,48 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    // 解析 Device Type 和 Software Version
                     def deviceMatch = infoResult =~ /Device Type:\s*(.+)/
                     def versionMatch = infoResult =~ /Software Version:\s*(.+)/
 
                     env.DEVICE_TYPE = deviceMatch ? deviceMatch[0][1].trim() : "Unknown"
                     env.SOFTWARE_VERSION = versionMatch ? versionMatch[0][1].trim() : "Unknown"
 
+                    def timestamp = new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))
+                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins\\Reports\\${timestamp} ${env.DEVICE_TYPE} ${env.SOFTWARE_VERSION}.log"
+
                     echo "Device Type: ${env.DEVICE_TYPE}"
                     echo "Software Version: ${env.SOFTWARE_VERSION}"
+                    echo "Log file: ${env.TEST_OUTPUT_FILE}"
                 }
             }
         }
+
         stage('Run All Tests') {
             steps {
                 script {
-                    def logDir = "D:\\pytest_jenkins\\Reports"
-                    bat("mkdir \"${logDir}\" 2>nul || exit /b 0")
-                    def logFile = "${logDir}\\test_output_${BUILD_NUMBER}.log"
+                    bat 'mkdir "D:\\pytest_jenkins\\Reports" 2>nul || exit /b 0'
+                    bat "python run_all_tests.py 1>\"${env.TEST_OUTPUT_FILE}\" 2>&1"
 
-                    // 先运行测试并输出到日志
-                    bat("python run_all_tests.py 1>\"${logFile}\" 2>&1")
-
-                    // 再读取日志并打印到控制台（可选）
-                    def content = readFile("${logFile}")
-                    echo(content)
+                    def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
+                    echo content
                 }
             }
         }
 
-            stage('Send Email Report') {
-                steps {
-                    bat 'python send_email.py'
+        stage('Send Email Report') {
+            steps {
+                bat 'python send_email.py'
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                if (env.TEST_OUTPUT_FILE && fileExists(env.TEST_OUTPUT_FILE)) {
+                    archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
                 }
             }
         }
     }
+}
