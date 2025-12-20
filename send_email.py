@@ -29,8 +29,11 @@ def get_test_summary(log_path):
                     if match:
                         passed = int(match.group(1))
                         failed = int(match.group(2))
+                        print("Found summary: " + str(passed) + " passed, " + str(failed) + " failed")
+                    else:
+                        print("No match for Summary line: " + line.strip())
     except Exception as e:
-        print("Failed to read log: " + str(e))
+        print("Error reading log: " + str(e))
 
     print("Parsed: Device=" + device + ", Version=" + version + ", Passed=" + str(passed) + ", Failed=" + str(failed))
     return device, version, passed, failed
@@ -48,6 +51,10 @@ def main():
 
     log_path = Path(log_file)
     detailed_log = Path(detailed_log_path) if detailed_log_path else None
+
+    if not log_path.exists():
+        print("test_run.log not found: " + str(log_path))
+        exit(1)
 
     device, version, passed, failed = get_test_summary(log_path)
 
@@ -79,6 +86,8 @@ def main():
             print("Attached: " + str(detailed_log))
         except Exception as e:
             print("Failed to attach log: " + str(e))
+    else:
+        print("Detailed log not found: " + str(detailed_log))
 
     try:
         server = smtplib.SMTP("smtp.qq.com", 587, timeout=15)
