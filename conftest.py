@@ -29,7 +29,7 @@ def login(driver):
     login_username = ec.login_username
     login_password = ec.login_password
     driver.get(base_url)
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 30)
     # 正确使用 wait.until(...)
     username = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_username_field)))
     password = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_password_field)))
