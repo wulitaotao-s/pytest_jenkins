@@ -8,11 +8,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 
-# 从 Jenkins 环境变量读取配置
+# 固定日志保存路径（不再读取 REPORT_ROOT）
+report_root = r"D:\pytest_jenkins\Reports"
+
+# 邮件配置（从环境变量读取）
 sender_email = os.getenv("QQ_EMAIL")
 password = os.getenv("QQ_AUTH_CODE")
 receiver_email = os.getenv("RECIPIENT")
-report_root = os.getenv("REPORT_ROOT", r"D:\pytest_jenkins\Reports")
 
 test_cases_dir = "Test_cases"
 get_info_script = "test_get_info.py"
@@ -69,6 +71,7 @@ def send_email(subject, body):
         print("Failed to send email: " + str(e))
 
 def main():
+    # 确保 D:\pytest_jenkins\Reports 目录存在
     os.makedirs(report_root, exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -81,7 +84,7 @@ def main():
     print("Device Type:", device_type)
     print("Software Version:", software_version)
 
-    # 运行测试
+    # 运行测试用例
     test_dir = Path(test_cases_dir)
     if not test_dir.exists():
         print("Test_cases directory not found")
@@ -98,9 +101,11 @@ def main():
         passed, failed = parse_pytest_summary(full_test_output)
         print("Test Result:", passed, "passed,", failed, "failed")
 
-    # 保存日志到本地（仅用于归档，不发送）
+    # 生成日志文件路径（固定到 D:\pytest_jenkins\Reports）
     log_filename = f"{timestamp}_{device_type}_{software_version}.log"
     log_path = os.path.join(report_root, log_filename)
+
+    # 写入日志（仅本地归档）
     with open(log_path, "w", encoding="utf-8") as f:
         f.write("=== DEVICE INFO ===\n")
         f.write(cleaned_output)
@@ -113,7 +118,7 @@ def main():
 
     print("Log saved to:", log_path)
 
-    # 发送纯文本邮件（无附件，无日志引用）
+    # 发送邮件（无附件，不提日志）
     subject = "[Jenkins CI] " + device_type + " " + software_version + " | PASS: " + str(passed) + " / FAIL: " + str(failed)
     body = "Automated Test Report\n\n" \
            "Device Type: " + device_type + "\n" \
@@ -121,6 +126,7 @@ def main():
            "Test Result: " + str(passed) + " passed, " + str(failed) + " failed"
 
     send_email(subject, body)
+
 
 if __name__ == "__main__":
     main()
