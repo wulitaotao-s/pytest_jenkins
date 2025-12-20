@@ -1,130 +1,94 @@
 # send_email.py
 import os
 import smtplib
-import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from pathlib import Path
 
 
-def parse_log_filename(filename):
-    """解析日志文件名中的日期，格式：2025-12-20 *.log"""
-    if not filename.endswith(".log"):
-        return None
-    match = re.match(r'(\d{4}-\d{2}-\d{2})', filename)
-    if match:
-        try:
-            return datetime.strptime(match.group(1), "%Y-%m-%d")
-        except:
-            pass
-    return None
-
-
-def extract_device_info_from_filename(filename):
-    """从日志文件名提取设备型号和版本号"""
-    if not filename or not filename.endswith(".log"):
-        return "UnknownDevice", "UnknownVersion"
-    name = filename[:-4]  # 去掉 .log
-    parts = name.split(' ', 2)  # [日期, 型号, 版本]
+def extract_device_info_from_filename(filename: str):
+    """从日志文件名 '2025-12-20_14-05-29 FT-35 V1.0.13.log' 提取设备信息"""
+    name = filename.replace(".log", "")
+    parts = name.split(' ', 2)  # 最多分3部分
     device = parts[1] if len(parts) > 1 else "UnknownDevice"
     version = parts[2] if len(parts) > 2 else "UnknownVersion"
     return device.strip(), version.strip()
 
 
-def read_summary_from_log(log_path):
-    """从日志末尾提取汇总信息"""
-    try:
-        with open(log_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        total = passed = failed = 0
-        for line in lines[-20:]:  # 只看最后20行
-            if "总用例数:" in line:
-                total = int(re.search(r'\d+', line).group())
-            elif "通过（PASS）:" in line:
-                passed = int(re.search(r'\d+', line).group())
-            elif "失败（FAIL）:" in line:
-                failed = int(re.search(r'\d+', line).group())
-
-        return total, passed, failed
-    except Exception as e:
-        print(f"读取日志摘要失败: {e}")
-        return 0, 0, 0
+def parse_test_summary_from_log(log_content: str):
+    """从日志内容中解析通过/失败数量"""
+    lines = log_content.splitlines()
+    for line in lines:
+        if "Summary:" in line or ("Passed:" in line and "Failed:" in line):
+            # 例如: Summary: 2 passed, 1 failed
+            import re
+            match = re.search(r"(\d+)\s+passed,\s+(\d+)\s+failed", line)
+            if match:
+                passed = int(match.group(1))
+                failed = int(match.group(2))
+                return passed, failed
+    return 0, 0
 
 
-def send_test_summary():
-    try:
-        qq_email = os.environ['QQ_EMAIL']
-        qq_auth_code = os.environ['QQ_AUTH_CODE']
-        recipient = os.environ['RECIPIENT']
-    except KeyError as e:
-        print(f"环境变量缺失: {e}")
-        return
-
-    report_dir = r'D:\pytest_jenkins\report'
-
-    # 查找最新的日志文件
-    log_files = []
-    for file in os.listdir(report_dir):
-        dt = parse_log_filename(file)
-        if dt:
-            log_files.append((dt, file))
-
-    if not log_files:
-        print("未找到任何日志文件")
-        return
-
-    log_files.sort(key=lambda x: x[0], reverse=True)
-    latest_log = log_files[0][1]
-    log_path = os.path.join(report_dir, latest_log)
+def send_test_report_email(log_file_path: str):
+    log_path = Path(log_file_path)
+    if not log_path.exists():
+        raise FileNotFoundError(f"Log file not found: {log_file_path}")
 
     # 提取设备信息
-    device_type, sw_version = extract_device_info_from_filename(latest_log)
+    device, version = extract_device_info_from_filename(log_path.name)
 
-    # 从日志中读取测试结果
-    total, passed, failed = read_summary_from_log(log_path)
+    # 读取日志内容
+    with open(log_path, "r", encoding="utf-8") as f:
+        content = f.read()
 
-    # 构建邮件正文
-    status = "全部通过" if failed == 0 else "存在失败"
-    summary_text = f"""自动化测试结果汇总（按测试模块统计）：
+    # 解析统计
+    passed, failed = parse_test_summary_from_log(content)
 
-设备型号：{device_type}
-软件版本：{sw_version}
+    # 邮件配置（请替换为你的实际配置）
+    smtp_server = "smtp.example.com"
+    smtp_port = 587
+    sender_email = "your_email@example.com"
+    sender_password = "your_app_password"  # 建议用环境变量
+    receiver_email = "team@example.com"
 
-总模块数：{total}
-通过（PASS）：{passed}
-失败（FAIL）：{failed}
+    # 构建邮件
+    subject = f"[Jenkins] {device} {version} | PASS: {passed} / FAIL: {failed}"
+    body = f"""\
+Automated test report for device: {device} (Version: {version})
 
-构建状态：{status}
+Summary:
+- Passed: {passed}
+- Failed: {failed}
+- Log file: {log_path.name}
 
-详细日志请查看附件。
+Full log attached.
 """
 
-    # 创建邮件
     msg = MIMEMultipart()
-    msg['From'] = qq_email
-    msg['To'] = recipient
-    msg['Subject'] = f'[Jenkins] {device_type} {sw_version} | PASS: {passed} / FAIL: {failed}'
-    msg.attach(MIMEText(summary_text, 'plain', 'utf-8'))
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg["Subject"] = subject
 
-    # 添加日志附件
-    if os.path.exists(log_path):
-        with open(log_path, 'rb') as f:
-            part = MIMEText(f.read(), 'base64', 'utf-8')
-            part.add_header('Content-Disposition', 'attachment', filename=latest_log)
-            part.replace_header('Content-Transfer-Encoding', 'base64')
-            msg.attach(part)
+    msg.attach(MIMEText(body, "plain"))
+
+    # 可选：附加日志文件
+    # from email.mime.base import MIMEBase
+    # from email import encoders
+    # with open(log_path, "rb") as attachment:
+    #     part = MIMEBase("application", "octet-stream")
+    #     part.set_payload(attachment.read())
+    # encoders.encode_base64(part)
+    # part.add_header("Content-Disposition", f"attachment; filename= {log_path.name}")
+    # msg.attach(part)
 
     # 发送邮件
     try:
-        server = smtplib.SMTP_SSL('smtp.qq.com', 465)
-        server.login(qq_email, qq_auth_code)
-        server.send_message(msg)
-        server.quit()
-        print("✅ 邮件发送成功！")
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+        print("Email sent successfully.")
     except Exception as e:
-        print(f"❌ 邮件发送失败: {e}")
-
-
-if __name__ == '__main__':
-    send_test_summary()
+        print(f"Failed to send email: {e}")
+        raise
