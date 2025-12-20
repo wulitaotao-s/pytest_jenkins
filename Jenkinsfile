@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        // 邮件配置（使用凭据，不硬编码密码！）
-        QQ_EMAIL     = '2466065809@qq.com'
-        QQ_AUTH_CODE =   'tpyxgmecjqrndiif'
-        RECIPIENT    = '2466065809@qq.com'
-
-        // 日志根目录（可选：使用工作区或固定盘符）
-        REPORT_ROOT  = "${WORKSPACE}\\report"  // 或保留 D:\\pytest_jenkins\\Reports
+        QQ_EMAIL       = '2466065809@qq.com'
+        QQ_AUTH_CODE   = 'tpyxgmecjqrndiif'
+        RECIPIENT      = '2466065809@qq.com'
+        REPORT_ROOT    = "${WORKSPACE}\\report"
+        DEVICE_TYPE    = "Unknown"
+        SOFTWARE_VERSION = "Unknown"
+        TEST_OUTPUT_FILE = "${WORKSPACE}\\test_output.log"
     }
 
     stages {
@@ -28,15 +28,42 @@ pipeline {
             steps {
                 bat 'python -m pip install --upgrade pip'
                 bat 'pip install -r requirements.txt'
-                bat 'pip install pytest'
-                // 不需要 pytest-json-report（除非你用它）
+                bat 'pip install pytest selenium'
             }
         }
 
-        stage('Run Tests and Send Email') {
+        stage('Get Device Info') {
             steps {
-                // 只调用一个脚本
-                bat 'python run_all_tests.py'
+                script {
+                    def infoResult = bat(
+                        script: 'python get_info.py',
+                        returnStdout: true
+                    ).trim()
+
+                    // 解析 Device Type 和 Software Version
+                    def deviceMatch = infoResult =~ /Device Type:\s*(.+)/
+                    def versionMatch = infoResult =~ /Software Version:\s*(.+)/
+
+                    env.DEVICE_TYPE = deviceMatch ? deviceMatch[0][1].trim() : "Unknown"
+                    env.SOFTWARE_VERSION = versionMatch ? versionMatch[0][1].trim() : "Unknown"
+
+                    echo "Device Type: ${env.DEVICE_TYPE}"
+                    echo "Software Version: ${env.SOFTWARE_VERSION}"
+                }
+            }
+        }
+
+        stage('Run All Tests') {
+            steps {
+                script {
+                    bat "python run_all_tests.py > \"${env.TEST_OUTPUT_FILE}\" 2>&1"
+                }
+            }
+        }
+
+        stage('Send Email Report') {
+            steps {
+                bat 'python send_email.py'
             }
         }
     }

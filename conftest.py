@@ -6,12 +6,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import element_config as ec
 import logging
-import os
-import time
 import subprocess
 import time
 import re
-import sys
+
 
 
 @pytest.fixture(scope="function")
