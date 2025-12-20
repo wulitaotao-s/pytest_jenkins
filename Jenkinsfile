@@ -34,7 +34,7 @@ pipeline {
         stage('Run All Tests') {
             steps {
                 script {
-                    // 安全生成时间戳
+                    // 使用时间戳命名日志文件，避免设备信息影响
                     def now = new Date()
                     def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
                     env.TEST_OUTPUT_FILE = "${env.REPORT_DIR}\\test_report_${timestamp}.log"
@@ -42,15 +42,15 @@ pipeline {
                     // 确保目录存在
                     bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
 
-                    // 运行测试并保存日志
+                    // 运行测试并重定向输出
                     bat "python run_all_tests.py 1>\"${env.TEST_OUTPUT_FILE}\" 2>&1"
 
-                    // 如果日志不存在，创建一个
+                    // 如果日志不存在，创建一个占位文件
                     if (!fileExists(env.TEST_OUTPUT_FILE)) {
-                        bat "echo [ERROR] Test process crashed or log not generated. > \"${env.TEST_OUTPUT_FILE}\""
+                        bat "echo [ERROR] Test execution failed or log not generated. > \"${env.TEST_OUTPUT_FILE}\""
                     }
 
-                    // 打印日志到控制台
+                    // 读取日志内容并打印到控制台
                     def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
                     echo "=== Test Log ===\n${content}\n=== End ==="
                 }
