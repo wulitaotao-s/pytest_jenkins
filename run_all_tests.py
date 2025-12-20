@@ -5,52 +5,60 @@ import os
 import re
 from datetime import datetime
 
-# === 配置 ===
-# 优先读取环境变量，否则使用默认路径
-REPORT_DIR = os.environ.get("REPORT_DIR", r"D:\pytest_jenkins\report")
-JSON_REPORT = os.environ.get("JSON_REPORT", os.path.join(REPORT_DIR, "test_result.json"))
-LOG_FILE = os.environ.get("LOG_FILE", os.path.join(REPORT_DIR, "test_run.log"))
+# === 固定配置 ===
+BASE_REPORT_DIR = r"D:\pytest_jenkins\report"
+os.makedirs(BASE_REPORT_DIR, exist_ok=True)
 
-# 确保目录存在
-os.makedirs(REPORT_DIR, exist_ok=True)
+# 默认设备信息（如果无法提取）
+DEVICE_TYPE = "UnknownDevice"
+SOFTWARE_VERSION = "UnknownVersion"
 
-# 设置 UTF-8 输出编码（防止中文乱码）
+# 设置 UTF-8 输出编码
 if sys.version_info >= (3, 7):
     os.environ["PYTHONIOENCODING"] = "utf-8"
 
-TEST_DIR = "Test_cases"  # 测试用例目录
+TEST_DIR = "Test_cases"
+
+
+def extract_device_info_from_output(output_lines):
+    """从输出中提取 Device Type 和 Software Version"""
+    global DEVICE_TYPE, SOFTWARE_VERSION
+    for line in output_lines:
+        if "Device Type:" in line:
+            try:
+                DEVICE_TYPE = line.split("Device Type:")[-1].strip()
+            except:
+                pass
+        if "Software Version:" in line:
+            try:
+                SOFTWARE_VERSION = line.split("Software Version:")[-1].strip()
+            except:
+                pass
 
 
 def extract_module_name(line: str) -> str | None:
-    """从 pytest 输出中提取模块名，如 test_acs_connection.py"""
     match = re.search(r'[/\\]([^/\\]+\.py)::', line)
     return match.group(1) if match else None
 
 
 def main():
+    global DEVICE_TYPE, SOFTWARE_VERSION
+
+    # 先运行一次 pytest --collect-only 获取设备信息（可选优化）
+    # 但为简化，我们直接在正式运行中提取
+
     start_time = datetime.now()
-    timestamp_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
-
-    # 初始化日志文件
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
-        f.write(f"测试开始时间: {timestamp_str}\n")
-        f.write("=" * 60 + "\n\n")
-
-    print(f"测试开始时间: {timestamp_str}")
-    print("=" * 60)
+    date_str = start_time.strftime('%Y-%m-%d')
 
     # 构建 pytest 命令
     cmd = [
         sys.executable, "-m", "pytest",
         "-v", "-s",
-        "--json-report",
-        f"--json-report-file={JSON_REPORT}",
+        "--tb=long",  # 确保显示完整 traceback
         TEST_DIR
     ]
 
-    printed_modules = set()
-
-    # 启动子进程并实时捕获输出
+    # 启动子进程
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -58,65 +66,70 @@ def main():
         text=True,
         encoding="utf-8",
         errors="replace",
-        bufsize=1,  # 行缓冲
+        bufsize=1,
         universal_newlines=True
     )
 
+    all_output_lines = []
+
     try:
-        with open(LOG_FILE, "a", encoding="utf-8") as log_f:
-            for line in iter(process.stdout.readline, ""):
-                module = extract_module_name(line)
-
-                if module and module not in printed_modules:
-                    separator = "\n" + "=" * 60 + "\n"
-                    title = f">>> 开始执行测试模块: {module}\n"
-
-                    # 控制台输出
-                    print(separator, end="")
-                    print(title, end="")
-                    print(separator, end="")
-
-                    # 写入日志
-                    log_f.write(separator)
-                    log_f.write(title)
-                    log_f.write(separator)
-                    log_f.flush()
-                    printed_modules.add(module)
-
-                # 写入原始行（含错误、堆栈等）
-                log_f.write(line)
-                log_f.flush()
-
+        for line in iter(process.stdout.readline, ""):
+            all_output_lines.append(line)
     except Exception as e:
-        print(f"⚠️ 读取 pytest 输出时发生异常: {e}")
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(f"\n⚠️ 异常: {e}\n")
-
+        all_output_lines.append(f"ERROR DURING CAPTURE: {e}\n")
     finally:
-        process.wait()  # 等待 pytest 结束
-        # 读取可能残留的输出（确保不丢数据）
+        process.wait()
         remaining = process.stdout.read()
         if remaining:
-            with open(LOG_FILE, "a", encoding="utf-8") as f:
-                f.write(remaining)
-                f.flush()
+            all_output_lines.extend(remaining.splitlines(keepends=True))
 
-    # 写入总结信息
-    end_time = datetime.now()
-    duration = end_time - start_time
-    summary = (
-        f"\n{'=' * 60}\n"
-        f"测试结束时间: {end_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"总耗时: {duration.total_seconds():.1f} 秒\n"
-        f"退出码: {process.returncode} (0=成功)\n"
-        f"{'=' * 60}\n"
-    )
+    # 提取设备信息
+    extract_device_info_from_output(all_output_lines)
 
-    print(summary)
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(summary)
+    # 构建日志文件名
+    safe_device = "".join(c if c.isalnum() or c in (" ", ".", "-", "_") else "_" for c in DEVICE_TYPE)
+    safe_version = "".join(c if c.isalnum() or c in (" ", ".", "-", "_") else "_" for c in SOFTWARE_VERSION)
+    log_filename = f"{date_str} {safe_device} {safe_version}.log"
+    log_path = os.path.join(BASE_REPORT_DIR, log_filename)
 
-    # 关键：将 pytest 的退出码传递给操作系统
+    # 写入日志
+    with open(log_path, "w", encoding="utf-8") as f:
+        # 开头信息
+        f.write(f"测试开始时间: {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"设备型号: {DEVICE_TYPE}\n")
+        f.write(f"软件版本: {SOFTWARE_VERSION}\n")
+        f.write("=" * 80 + "\n\n")
+
+        printed_modules = set()
+
+        for line in all_output_lines:
+            # 检测是否是新测试模块开始
+            module = extract_module_name(line)
+            if module and module not in printed_modules:
+                f.write("\n\n")
+                f.write("=" * 80 + "\n")
+                f.write(f"开始执行测试模块: {module}\n")
+                f.write("=" * 80 + "\n\n")
+                printed_modules.add(module)
+
+            f.write(line)
+
+        # 结尾汇总
+        end_time = datetime.now()
+        duration = end_time - start_time
+        f.write("\n\n")
+        f.write("=" * 80 + "\n")
+        f.write(f"测试结束时间: {end_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"总耗时: {duration.total_seconds():.1f} 秒\n")
+        f.write(f"退出码: {process.returncode} (0 表示全部通过)\n")
+        f.write("=" * 80 + "\n")
+
+    # 打印到控制台
+    print(f"日志已保存至: {log_path}")
+    print(f"设备型号: {DEVICE_TYPE}")
+    print(f"软件版本: {SOFTWARE_VERSION}")
+
+    # 退出码传递
     sys.exit(process.returncode)
 
 
