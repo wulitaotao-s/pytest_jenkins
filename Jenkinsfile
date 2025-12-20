@@ -5,7 +5,7 @@ pipeline {
         QQ_EMAIL = '2466065809@qq.com'
         QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
         RECIPIENT = '2466065809@qq.com'
-        REPORT_ROOT = "${WORKSPACE}\\report"
+        REPORT_DIR = "D:\\pytest_jenkins\\Reports"
         TEST_OUTPUT_FILE = ""
     }
 
@@ -18,8 +18,8 @@ pipeline {
 
         stage('Create Report Directory') {
             steps {
-                bat 'mkdir "%REPORT_ROOT%" 2>nul || exit /b 0'
-                bat 'mkdir "D:\\pytest_jenkins\\Reports" 2>nul || exit /b 0'
+                bat 'mkdir "%WORKSPACE%\\report" 2>nul || exit /b 0'
+                bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
             }
         }
 
@@ -34,32 +34,31 @@ pipeline {
         stage('Run All Tests') {
             steps {
                 script {
-                    // 使用时间戳生成日志文件名，不依赖设备信息
-                    def timestamp = new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))
-                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins\\Reports\\test_report_${timestamp}.log"
+                    // 安全生成时间戳
+                    def now = new Date()
+                    def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
+                    env.TEST_OUTPUT_FILE = "${env.REPORT_DIR}\\test_report_${timestamp}.log"
 
                     // 确保目录存在
-                    bat 'mkdir "D:\\pytest_jenkins\\Reports" 2>nul || exit /b 0'
+                    bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
 
-                    // 运行测试并重定向输出到日志文件
+                    // 运行测试并保存日志
                     bat "python run_all_tests.py 1>\"${env.TEST_OUTPUT_FILE}\" 2>&1"
 
-                    // 安全读取日志内容（用于 Jenkins 控制台显示）
-                    if (fileExists(env.TEST_OUTPUT_FILE)) {
-                        def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
-                        echo "=== Test Log ===\n${content}\n=== End of Log ==="
-                    } else {
-                        echo "Warning: Log file not found at ${env.TEST_OUTPUT_FILE}"
-                        // 创建占位日志，确保 send_email.py 不崩溃
-                        bat "echo [ERROR] Test execution failed or log was not generated. > \"${env.TEST_OUTPUT_FILE}\""
+                    // 如果日志不存在，创建一个
+                    if (!fileExists(env.TEST_OUTPUT_FILE)) {
+                        bat "echo [ERROR] Test process crashed or log not generated. > \"${env.TEST_OUTPUT_FILE}\""
                     }
+
+                    // 打印日志到控制台
+                    def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
+                    echo "=== Test Log ===\n${content}\n=== End ==="
                 }
             }
         }
 
         stage('Send Email Report') {
             steps {
-                // 将日志路径传给 send_email.py（通过环境变量或直接读固定目录）
                 bat """
                     set TEST_OUTPUT_FILE=${env.TEST_OUTPUT_FILE}
                     python send_email.py
@@ -71,7 +70,6 @@ pipeline {
     post {
         always {
             script {
-                // 归档日志（如果存在）
                 if (env.TEST_OUTPUT_FILE && fileExists(env.TEST_OUTPUT_FILE)) {
                     archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
                 }
