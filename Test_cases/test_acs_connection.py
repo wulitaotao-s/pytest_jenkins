@@ -125,7 +125,7 @@ def test_acs_connection(driver):
 
     # 选择接口（TR069）
     interface_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface)))
-    interface_input.click()
+    driver.execute_script("arguments[0].click();", interface_input)
     internet_opt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface_TR069)))
     internet_opt.click()
 

@@ -97,7 +97,7 @@ def test_wan_pppoe_ping_jd(driver):
     # 选择接口：Internet
     print(" 选择 Ping 接口 = Internet")
     interface_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface)))
-    interface_input.click()
+    driver.execute_script("arguments[0].click();", interface_input)
     internet_opt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_INTERNET)))
     internet_opt.click()
 
