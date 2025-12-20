@@ -1,4 +1,4 @@
-# test_device_info.py
+# test_a_device_info.py
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
