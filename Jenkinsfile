@@ -7,15 +7,14 @@ pipeline {
         QQ_EMAIL         = '2466065809@qq.com'
         QQ_AUTH_CODE     = 'tpyxgmecjqrndiif'
         RECIPIENT        = '2466065809@qq.com'
-        WORK_ROOT        = "D:\\pytest_jenkins_test"   // 自定义工作目录
+        WORK_ROOT        = "D:\\pytest_jenkins_test"
         REPORT_DIR       = "D:\\pytest_jenkins_test\\Reports"
-        VENV_DIR         = "D:\\pytest_jenkins_test\\.venv"
+        // VENV_DIR 被移除，不再使用
     }
 
     stages {
         stage('Prepare Custom Workspace') {
             steps {
-                // 确保目录存在
                 bat '''
                     @echo off
                     echo [INFO] Preparing custom workspace at %WORK_ROOT%
@@ -28,9 +27,7 @@ pipeline {
         stage('Checkout into Custom Directory') {
             steps {
                 dir(env.WORK_ROOT) {
-                    // 清理旧内容（可选）
                     bat 'rd /s /q . 2>nul || exit /b 0'
-                    // 重新拉取代码
                     checkout scm
                 }
             }
@@ -46,66 +43,30 @@ pipeline {
             }
         }
 
-    stage('Create Virtual Environment') {
-        steps {
-            bat '''
-                @echo off
-                echo [INFO] Step 1: Checking if 'python' command is in PATH...
-                where python >nul 2>&1
-                if %ERRORLEVEL% neq 0 (
-                    echo [FATAL] 'python' command not found. Please install Python and add it to system PATH.
-                    exit /b 1
-                )
-
-                echo [INFO] Step 2: Verifying Python can run...
-                python --version
-                if %ERRORLEVEL% neq 0 (
-                    echo [FATAL] Python exists but cannot be executed. Check installation.
-                    exit /b 1
-                )
-
-                echo [INFO] Step 3: Checking if 'venv' module is available...
-                python -c "import venv; print('venv module is available')"
-                if %ERRORLEVEL% neq 0 (
-                    echo [FATAL] 'venv' module is missing. Install Python with 'venv' support (avoid Microsoft Store version).
-                    exit /b 1
-                )
-
-                echo [INFO] Step 4: Checking for existing virtual environment at %VENV_DIR%...
-                if exist "%VENV_DIR%" (
-                    echo [INFO] Virtual environment already exists. Skipping creation.
-                    exit /b 0
-                )
-
-                echo [INFO] Step 5: Creating virtual environment at %VENV_DIR%...
-                python -m venv "%VENV_DIR%"
-                if %ERRORLEVEL% neq 0 (
-                    echo [FATAL] Failed to create virtual environment. Possible causes:
-                    echo         - Insufficient permissions on D:\\pytest_jenkins_test
-                    echo         - Antivirus blocking file creation
-                    echo         - Corrupted Python installation
-                    exit /b 1
-                )
-
-                echo [INFO] Virtual environment created successfully.
-                exit /b 0
-            '''
-        }
-    }
+        // ❌ 移除 "Create Virtual Environment" stage
 
         stage('Install Dependencies') {
             steps {
                 bat '''
                     @echo off
-                    call "%VENV_DIR%\\Scripts\\activate.bat"
+                    cd /d "%WORK_ROOT%"
+
+                    echo [INFO] Checking Python and pip...
+                    where python >nul 2>&1
+                    if %ERRORLEVEL% neq 0 (
+                        echo [FATAL] 'python' not found in PATH. Please install Python and add to PATH.
+                        exit /b 1
+                    )
+
+                    python --version
+                    pip --version
+
                     echo [INFO] Upgrading pip...
                     python -m pip install --upgrade pip
                     if %ERRORLEVEL% neq 0 (
                         echo [ERROR] Failed to upgrade pip.
                         exit /b 1
                     )
-
-                    cd /d "%WORK_ROOT%"
 
                     echo [INFO] Installing dependencies from requirements.txt...
                     if not exist "requirements.txt" (
@@ -137,7 +98,6 @@ pipeline {
                         @echo off
                         mkdir \"${env.REPORT_DIR}\" 2>nul
 
-                        call \"${env.VENV_DIR}\\Scripts\\activate.bat\"
                         cd /d \"${env.WORK_ROOT}\"
 
                         echo [INFO] Running pytest...
@@ -178,7 +138,6 @@ pipeline {
                         echo [WARN] send_email.py not found. Skipping email.
                         exit /b 0
                     )
-                    call \"${env.VENV_DIR}\\Scripts\\activate.bat\"
                     echo [INFO] Sending email report...
                     python send_email.py
                     if %ERRORLEVEL% neq 0 (
@@ -203,10 +162,5 @@ pipeline {
                 }
             }
         }
-
-        // 可选：清理整个目录（谨慎使用！）
-        // cleanup {
-        //     bat 'rd /s /q "D:\\pytest_jenkins_test" 2>nul && echo [INFO] Cleaned up D:\\pytest_jenkins_test'
-        // }
     }
 }
