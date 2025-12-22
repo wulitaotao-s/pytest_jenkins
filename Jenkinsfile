@@ -9,7 +9,10 @@ pipeline {
         RECIPIENT        = '2466065809@qq.com'
         WORK_ROOT        = "D:\\pytest_jenkins_test"
         REPORT_DIR       = "D:\\pytest_jenkins_test\\Reports"
-        // VENV_DIR 被移除，不再使用
+        // 使用 BUILD_ID 或自定义时间戳作为唯一标识
+        TIMESTAMP        = "${new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))}"
+        HTML_REPORT_FILE = "D:\\pytest_jenkins_test\\Reports\\report_${TIMESTAMP}.html"
+        TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${TIMESTAMP}.log"
     }
 
     stages {
@@ -43,8 +46,6 @@ pipeline {
             }
         }
 
-        // ❌ 移除 "Create Virtual Environment" stage
-
         stage('Install Dependencies') {
             steps {
                 bat '''
@@ -54,7 +55,7 @@ pipeline {
                     echo [INFO] Checking Python and pip...
                     where python >nul 2>&1
                     if %ERRORLEVEL% neq 0 (
-                        echo [FATAL] 'python' not found in PATH. Please install Python and add to PATH.
+                        echo [FATAL] 'python' not found in PATH.
                         exit /b 1
                     )
 
@@ -87,27 +88,22 @@ pipeline {
 
         stage('Run Pytest Tests') {
             steps {
+                bat """
+                    cd /d \"${env.WORK_ROOT}\"
+                    mkdir \"${env.REPORT_DIR}\" 2>nul
+
+                    echo [INFO] Running pytest with real-time logging...
+
+                    set PYTHONUNBUFFERED=1
+                    python -m pytest Test_cases -v -s ^
+                        --tb=short ^
+                        --html=\"${env.HTML_REPORT_FILE}\" ^
+                        --self-contained-html ^
+                        1>\"${env.TEST_OUTPUT_FILE}\" 2>&1
+                """
+
+                // 实时打印带 [TEST LOG] 的行（可选）
                 script {
-                    def now = new Date()
-                    def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
-                    env.HTML_REPORT_FILE = "D:\\pytest_jenkins_test\\Reports\\report_${timestamp}.html"
-                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${timestamp}.log"
-
-                    bat """
-                        cd /d \"${env.WORK_ROOT}\"
-                        mkdir \"${env.REPORT_DIR}\" 2>nul
-
-                        echo [INFO] Running pytest with real-time logging...
-
-                        set PYTHONUNBUFFERED=1
-                        python -m pytest Test_cases -v -s ^
-                            --tb=short ^
-                            --html=\"${env.HTML_REPORT_FILE}\" ^
-                            --self-contained-html ^
-                            1>\"${env.TEST_OUTPUT_FILE}\" 2>&1
-                    """
-
-                    // 可选：实时打印到 Jenkins 控制台（用于调试）
                     if (fileExists(env.TEST_OUTPUT_FILE)) {
                         def lines = readFile(file: env.TEST_OUTPUT_FILE).split('\n')
                         for (line in lines) {
@@ -121,23 +117,28 @@ pipeline {
         }
 
         stage('Send Email Report') {
+            when {
+                expression { currentBuild.result != 'SUCCESS' || currentBuild.result == null }
+            }
             steps {
-                bat """
-                    @echo off
-                    cd /d \"${env.WORK_ROOT}\"
-                    if not exist \"send_email.py\" (
-                        echo [WARN] send_email.py not found. Skipping email.
+                script {
+                    def result = bat returnStatus: true, script: """
+                        cd /d "${env.WORK_ROOT}"
+                        if not exist "send_email.py" (
+                            echo [WARN] send_email.py not found. Skipping email.
+                            exit /b 0
+                        )
+                        echo [INFO] Sending email report...
+                        python send_email.py
                         exit /b 0
-                    )
-                    echo [INFO] Sending email report...
-                    python send_email.py
-                    if %ERRORLEVEL% neq 0 (
-                        echo [ERROR] Failed to send email.
-                        exit /b 1
-                    )
-                    echo [INFO] Email sent successfully.
-                    exit /b 0
-                """
+                    """
+
+                    if (result == 0) {
+                        echo "[INFO] Email sent successfully."
+                    } else {
+                        echo "[ERROR] Failed to send email."
+                    }
+                }
             }
         }
     }
@@ -145,11 +146,15 @@ pipeline {
     post {
         always {
             script {
-                if (env.TEST_OUTPUT_FILE && fileExists(env.TEST_OUTPUT_FILE)) {
-                    archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
+                // 使用 environment 中定义的全局路径
+                def htmlFile = env.HTML_REPORT_FILE
+                def logFile  = env.TEST_OUTPUT_FILE
+
+                if (fileExists(htmlFile)) {
+                    archiveArtifacts artifacts: htmlFile, allowEmptyArchive: true
                 }
-                if (env.HTML_REPORT_FILE && fileExists(env.HTML_REPORT_FILE)) {
-                    archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
+                if (fileExists(logFile)) {
+                    archiveArtifacts artifacts: logFile, allowEmptyArchive: true
                 }
             }
         }
