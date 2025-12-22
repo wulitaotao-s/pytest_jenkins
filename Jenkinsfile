@@ -26,8 +26,28 @@ pipeline {
 
         stage('Create Virtual Environment') {
             steps {
-                // 创建虚拟环境（如果不存在）
-                bat 'if not exist "%VENV_DIR%" python -m venv "%VENV_DIR%"'
+                bat """
+                    @echo off
+                    echo Checking if Python is available...
+                    where python >nul 2>&1
+                    if %ERRORLEVEL% neq 0 (
+                        echo [ERROR] Python is not found in PATH. Please install Python and add it to PATH.
+                        exit /b 1
+                    )
+
+                    echo Checking for existing virtual environment...
+                    if exist ".venv" (
+                        echo Virtual environment already exists. Skipping creation.
+                    ) else (
+                        echo Creating virtual environment...
+                        python -m venv ".venv"
+                        if %ERRORLEVEL% neq 0 (
+                            echo [ERROR] Failed to create virtual environment.
+                            exit /b 1
+                        )
+                        echo Virtual environment created successfully.
+                    )
+                """
             }
         }
 
