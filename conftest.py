@@ -9,13 +9,17 @@ import logging
 import subprocess
 import time
 import re
-
+from selenium.webdriver.chrome.options import Options
 
 
 @pytest.fixture(scope="function")
 def driver():
-    """启动浏览器，测试结束后自动关闭"""
-    d = webdriver.Chrome()
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")  # 新版 Chrome 推荐写法
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
     yield d
     d.quit()
 

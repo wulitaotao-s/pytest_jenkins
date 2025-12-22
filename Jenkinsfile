@@ -90,10 +90,8 @@ pipeline {
                 script {
                     def now = new Date()
                     def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
-
                     env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${timestamp}.log"
                     env.HTML_REPORT_FILE = "D:\\pytest_jenkins_test\\Reports\\report_${timestamp}.html"
-
                     bat """
                         @echo off
                         mkdir \"${env.REPORT_DIR}\" 2>nul
