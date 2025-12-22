@@ -35,21 +35,26 @@ logout = "#logout"
 Comfirm = "button#confirm"
 Cencel = "button#cancel"
 
-#language
-language = "div.t-menu div div:nth-child(3) button:nth-child(1)"
-language_choose_first = "div.t-dropdown__menu span:nth-child(1)"
-language_choose_sencond = "div.t-dropdown__menu span:nth-child(2)"
-language_choose_third = "div.t-dropdown__menu span:nth-child(3)"
-language_choose_fourth = "div.t-dropdown__menu span:nth-child(4)"
 
 # home
+home = url_base + "#/home"
 ## home 
 Network = "#network"
+Connection_info = "//span[text()='Connect Information']"
+Eth_Port_Information = "//span[text()='Eth Port Information']"
+WiFi_Information = "//span[text()='WiFi Information']"
+WiFi_Info_24G = "//span[text()='2.4G WiFi Info']"
+WiFi_Info_5G = "//span[text()='5G WiFi Info']"
 DeviceName = "#deviceName"
+Device_Information = "//span[text()='Device Information']"
+VOIP_Information = "//span[text()='VOIP Information']"
+PON_Information = "//span[text()='PON Information']"
+CWMP_Information = "//span[text()='CWMP Information']"
+Route_Information = "//span[text()='Route Information']"
+ARP_Information = "//span[text()='ARP Information']"
 DevicesInfo = "#devicesInfo"
-home_one_line = ".t-table__row--hover"
-home_one_line_td1 = '.t-table__row--hover td:nth-child(1)'
-home_one_line_td2 = '.t-table__row--hover td:nth-child(2)'
+Online_Device = "//span[contains(text(), 'online') or contains(text(), 'Online')]"
+Offline_Device = "//span[contains(text(), 'offline') or contains(text(), 'Offline')]"
 
 # basic 
 ## wan
@@ -149,20 +154,23 @@ cwmp_commit = "#cwmpSaveButton"
 Basic_voip = url_base + "/index.html#/basic/voip"
 ## basic setting
 voip_Protocol = "#voipCurrentProtocol input"
-voip_Binding_Interface = "#voipCurrentInterface input"
-voip_Region = "#voipRegion input"
+voip_Protocol_IMSSIP = '#IMSSIP'
+voip_Protocol_SIP = '#SIP'
+voip_Region = "#voipRegion input"   # 一般直接不用填
 voip_Register_Server = "#voipRegisterServer input"
+voip_Register_Server_port = "#voipRegisterServerPort input"
 voip_Proxy_Server = "#voipProxyServer input"
 voip_Proxy_Server_port = "#voipProxyServerPort input"
 voip_Outbound_Proxy = "#voipOutboundProxyServer input"
 voip_Outbound_Proxy_port = "#voipOutboundProxyServerPort input"
 voip_Secondary_Register_Server = "#voipSecRegisterServer input"
+voip_Secondary_Register_Server_port = "#voipSecRegisterServerPort input"
 voip_Secondary_Proxy_Server = "#voipSecProxyServer input"
 voip_Secondary_Proxy_Server_port = "#voipSecProxyServerPort input"
 voip_Secondary_Outbound_Proxy = "#voipSecOutboundProxyServer input"
 voip_Secondary_Outbound_Proxy_port = "#voipSecOutboundProxyServerPort input"
 voip_Registration_Status= "#voipRegistrationStatus"
-voip_Port_Rnable = "#voipPortEnable"
+voip_Port_Enable = "#voipPortEnable"
 voip_Account = "#voipAccount"
 voip_Password = "#voipPassword"
 voip_commit = "#voipBasicSave"
@@ -522,7 +530,11 @@ Device_Management_Upgrade = "#upload button"
 Device_Management_Import_File = "#importRomButton"
 Device_Management_ROM_Backup = "#importRomButton"
 Device_Management_Restart ="#reboot"
+Device_confirmReboot =  '#confirmReboot'
+Device_cancelReboot = '#cancelReboot'
 Device_Management_Reset = "#reset"
+Device_confirmReset =  '#confirmReset'
+Device_cancelReset = '#cancelReset'
 
 ## LED Control
 Advanced_System_LED_Control = url_base + "/index.html#/advanced/system/ledCtrl"

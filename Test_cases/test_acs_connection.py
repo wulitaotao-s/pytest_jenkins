@@ -57,7 +57,15 @@ def test_acs_connection(driver):
     print("设置 MTU = 1500")
     safe_set_input_value(driver, ec.wan_MTU, "1500")
 
-    # 判断并启用 WAN 开关
+    # 启用 Nat Enable 开关
+    switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_nat_enable)))
+    if "t-is-checked" not in switch.get_attribute("class"):
+        switch.click()
+        print("启用 Nat Enable")
+    else:
+        print("Nat Enable 已启用")
+
+    # 启用 WAN 开关
     switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Enable)))
     if "t-is-checked" not in switch.get_attribute("class"):
         switch.click()
@@ -116,7 +124,35 @@ def test_acs_connection(driver):
     else:
         print("TR069 WAN 未连接")
 
-    # ========== 6. Ping 测试 ==========
+    # ========== 6. 验证 CWMP 上报状态 ==========
+    print("跳转到首页并进入 CWMP Information 页面")
+    driver.get(ec.home)
+
+    # 点击 Device(1) 菜单
+    print("点击 Device(1) 菜单")
+    device_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.DeviceName)))
+    device_btn.click()
+    time.sleep(1)
+
+    # 点击 CWMP Information 子菜单
+    print("点击 CWMP Information")
+    cwmp_tab = wait.until(EC.element_to_be_clickable((By.XPATH, ec.CWMP_Information)))
+    cwmp_tab.click()
+    time.sleep(3)  # 等待页面加载和 ACS 上报完成
+
+    # 检查页面是否包含 "Reported successfully"
+    print("检查是否显示 'Reported successfully'")
+    body_text = driver.find_element(By.TAG_NAME, "body").text
+    if "Reported successfully" in body_text:
+        print("CWMP 已上报成功")
+    else:
+        print("未检测到 'Reported successfully' 文本")
+        # 可选：打印部分页面内容用于调试
+        print("当前页面片段（前500字符）：")
+        print(body_text[:500])
+        assert False, "CWMP 上报未成功"
+
+    # ========== 7. Ping 测试 ==========
     print("执行 Ping 测试")
     driver.get(ec.Advanced_System_System_Test)
 
