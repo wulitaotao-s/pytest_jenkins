@@ -5,13 +5,26 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def parse_test_output(test_log):
-    passed = len([line for line in test_log.splitlines() if "PASSED" in line])
-    failed = len([line for line in test_log.splitlines() if "FAILED" in line])
+    passed = 0
+    failed = 0
     failed_cases = []
+
     for line in test_log.splitlines():
-        if "FAILED" in line and "::" in line:
-            case = line.split()[0]
-            failed_cases.append(case)
+        # 只匹配以测试文件路径开头、包含 :: 的行（pytest -v 格式）
+        # 例如: test_login.py::test_valid_login PASSED
+        if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line):
+            parts = line.strip().split()
+            if not parts:
+                continue
+            status = parts[-1]  # 最后一个词通常是状态
+            test_name = parts[0]  # 第一个词是 test_file::test_func
+
+            if status == "PASSED":
+                passed += 1
+            elif status in ("FAILED", "ERROR"):
+                failed += 1
+                failed_cases.append(test_name)
+
     return passed, failed, failed_cases
 
 def main():
@@ -38,7 +51,7 @@ def main():
         "Automated Test Report",
         "",
         f"Total Passed: {passed}",
-        f"Total Failed: {failed}"
+        f"Total Failed (or Error): {failed}"
     ]
     if failed_cases:
         body_lines.append("")
