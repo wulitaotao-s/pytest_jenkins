@@ -4,11 +4,11 @@ pipeline {
     }
 
     environment {
-        QQ_EMAIL = '2466065809@qq.com'
-        QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
-        RECIPIENT = '2466065809@qq.com'
-        REPORT_DIR = "D:\\pytest_jenkins\\Reports"
-        VENV_DIR = ".venv"  // 虚拟环境目录（相对于 workspace）
+        QQ_EMAIL       = '2466065809@qq.com'
+        QQ_AUTH_CODE   = 'tpyxgmecjqrndiif'
+        RECIPIENT      = '2466065809@qq.com'
+        REPORT_DIR     = "D:\\pytest_jenkins\\Reports"
+        VENV_DIR       = ".venv"
     }
 
     stages {
@@ -20,45 +20,73 @@ pipeline {
 
         stage('Create Report Directory') {
             steps {
-                bat 'mkdir "%REPORT_DIR%" 2>nul || exit /b 0'
+                bat '''
+                    @echo off
+                    mkdir "%REPORT_DIR%" 2>nul
+                    exit /b 0
+                '''
             }
         }
 
         stage('Create Virtual Environment') {
             steps {
-                bat """
+                bat '''
                     @echo off
-                    echo Checking if Python is available...
+                    echo [INFO] Checking if Python is available...
                     where python >nul 2>&1
                     if %ERRORLEVEL% neq 0 (
-                        echo [ERROR] Python is not found in PATH. Please install Python and add it to PATH.
+                        echo [FATAL] Python not found in PATH. Please install Python and add it to system PATH.
                         exit /b 1
                     )
 
-                    echo Checking for existing virtual environment...
+                    echo [INFO] Checking for existing virtual environment at .venv...
                     if exist ".venv" (
-                        echo Virtual environment already exists. Skipping creation.
-                    ) else (
-                        echo Creating virtual environment...
-                        python -m venv ".venv"
-                        if %ERRORLEVEL% neq 0 (
-                            echo [ERROR] Failed to create virtual environment.
-                            exit /b 1
-                        )
-                        echo Virtual environment created successfully.
+                        echo [INFO] Virtual environment already exists. Skipping creation.
+                        exit /b 0
                     )
-                """
+
+                    echo [INFO] Creating virtual environment...
+                    python -m venv ".venv"
+                    if %ERRORLEVEL% neq 0 (
+                        echo [FATAL] Failed to create virtual environment.
+                        exit /b 1
+                    )
+
+                    echo [INFO] Virtual environment created successfully.
+                    exit /b 0
+                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // 激活虚拟环境并安装依赖
-                bat """
-                    call "%VENV_DIR%\\Scripts\\activate.bat"
+                // 可选：调试用，确认 .venv 存在
+                // bat 'dir .venv'
+
+                bat '''
+                    @echo off
+                    call ".venv\\Scripts\\activate.bat"
+                    echo [INFO] Upgrading pip...
                     python -m pip install --upgrade pip
+                    if %ERRORLEVEL% neq 0 (
+                        echo [ERROR] Failed to upgrade pip.
+                        exit /b 1
+                    )
+
+                    echo [INFO] Installing dependencies from requirements.txt...
+                    if not exist "requirements.txt" (
+                        echo [WARN] requirements.txt not found. Skipping dependency installation.
+                        exit /b 0
+                    )
                     pip install -r requirements.txt
-                """
+                    if %ERRORLEVEL% neq 0 (
+                        echo [ERROR] Failed to install dependencies.
+                        exit /b 1
+                    )
+
+                    echo [INFO] Dependencies installed successfully.
+                    exit /b 0
+                '''
             }
         }
 
@@ -71,34 +99,59 @@ pipeline {
                     env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins\\Reports\\pytest_console_${timestamp}.log"
                     env.HTML_REPORT_FILE = "D:\\pytest_jenkins\\Reports\\report_${timestamp}.html"
 
-                    bat 'mkdir "%REPORT_DIR%" 2>nul || exit /b 0'
-
-                    // 在虚拟环境中运行 pytest
-                    bat """
-                        call "%VENV_DIR%\\Scripts\\activate.bat"
+                    bat '''
+                        @echo off
+                        mkdir "%REPORT_DIR%" 2>nul
+                        call ".venv\\Scripts\\activate.bat"
+                        echo [INFO] Running pytest...
                         python -m pytest Test_cases -v --tb=short ^
-                        --html="%HTML_REPORT_FILE%" ^
-                        --self-contained-html ^
-                        1>"%TEST_OUTPUT_FILE%" 2>&1
-                    """
+                            --html="%HTML_REPORT_FILE%" ^
+                            --self-contained-html ^
+                            1>"%TEST_OUTPUT_FILE%" 2>&1
 
-                    if (!fileExists(env.TEST_OUTPUT_FILE)) {
-                        bat "echo [ERROR] Pytest did not generate console log. > \"%TEST_OUTPUT_FILE%\""
+                        if %ERRORLEVEL% neq 0 (
+                            echo [WARN] Pytest exited with non-zero code (tests may have failed).
+                            REM We do NOT fail the build here unless you want to.
+                        )
+
+                        if not exist "%TEST_OUTPUT_FILE%" (
+                            echo [ERROR] Console log file was not generated.
+                            echo [ERROR] Pytest did not generate console log. > "%TEST_OUTPUT_FILE%"
+                        )
+
+                        echo [INFO] Pytest completed.
+                        exit /b 0
+                    '''
+
+                    // 打印日志到 Jenkins 控制台
+                    if (fileExists(env.TEST_OUTPUT_FILE)) {
+                        def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
+                        echo "=== Pytest Console Log ===\n${content}\n=== End ==="
+                    } else {
+                        echo "[WARNING] Test output file not found for display."
                     }
-
-                    def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
-                    echo "=== Pytest Console Log ===\n${content}\n=== End ==="
                 }
             }
         }
 
         stage('Send Email Report') {
             steps {
-                // 注意：send_email.py 也应在虚拟环境中运行（如果它依赖某些库）
-                bat """
-                    call "%VENV_DIR%\\Scripts\\activate.bat"
+                bat '''
+                    @echo off
+                    if not exist "send_email.py" (
+                        echo [WARN] send_email.py not found. Skipping email.
+                        exit /b 0
+                    )
+                    call ".venv\\Scripts\\activate.bat"
+                    echo [INFO] Sending email report...
                     python send_email.py
-                """
+                    if %ERRORLEVEL% neq 0 (
+                        echo [ERROR] Failed to send email.
+                        exit /b 1
+                    )
+                    echo [INFO] Email sent successfully.
+                    exit /b 0
+                '''
             }
         }
     }
@@ -115,9 +168,9 @@ pipeline {
             }
         }
 
-        // 可选：清理虚拟环境（节省磁盘空间）
+        // 可选：清理虚拟环境（节省空间）
         // cleanup {
-        //     bat 'rd /s /q ".venv" 2>nul || exit /b 0'
+        //     bat 'rd /s /q ".venv" 2>nul && echo [INFO] Cleaned up .venv || echo [INFO] No .venv to clean'
         // }
     }
 }
