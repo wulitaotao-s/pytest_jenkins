@@ -62,7 +62,7 @@ pipeline {
                     pip --version
 
                     echo [INFO] Upgrading pip...
-                    python -m pip install --upgrade pip
+                    python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple/
                     if %ERRORLEVEL% neq 0 (
                         echo [ERROR] Failed to upgrade pip.
                         exit /b 1
@@ -73,7 +73,7 @@ pipeline {
                         echo [WARN] requirements.txt not found. Skipping.
                         exit /b 0
                     )
-                    pip install -r requirements.txt
+                    pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
                     if %ERRORLEVEL% neq 0 (
                         echo [ERROR] Failed to install dependencies.
                         exit /b 1
