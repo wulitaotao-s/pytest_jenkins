@@ -46,35 +46,52 @@ pipeline {
             }
         }
 
-        stage('Create Virtual Environment') {
-            steps {
-                bat '''
-                    @echo off
-                    echo [INFO] Checking if Python is available...
-                    where python >nul 2>&1
-                    if %ERRORLEVEL% neq 0 (
-                        echo [FATAL] Python not found in PATH.
-                        exit /b 1
-                    )
+    stage('Create Virtual Environment') {
+        steps {
+            bat '''
+                @echo off
+                echo [INFO] Step 1: Checking if 'python' command is in PATH...
+                where python >nul 2>&1
+                if %ERRORLEVEL% neq 0 (
+                    echo [FATAL] 'python' command not found. Please install Python and add it to system PATH.
+                    exit /b 1
+                )
 
-                    echo [INFO] Checking for existing virtual environment at %VENV_DIR%...
-                    if exist "%VENV_DIR%" (
-                        echo [INFO] Virtual environment already exists. Skipping creation.
-                        exit /b 0
-                    )
+                echo [INFO] Step 2: Verifying Python can run...
+                python --version
+                if %ERRORLEVEL% neq 0 (
+                    echo [FATAL] Python exists but cannot be executed. Check installation.
+                    exit /b 1
+                )
 
-                    echo [INFO] Creating virtual environment at %VENV_DIR%...
-                    python -m venv "%VENV_DIR%"
-                    if %ERRORLEVEL% neq 0 (
-                        echo [FATAL] Failed to create virtual environment.
-                        exit /b 1
-                    )
+                echo [INFO] Step 3: Checking if 'venv' module is available...
+                python -c "import venv; print('venv module is available')"
+                if %ERRORLEVEL% neq 0 (
+                    echo [FATAL] 'venv' module is missing. Install Python with 'venv' support (avoid Microsoft Store version).
+                    exit /b 1
+                )
 
-                    echo [INFO] Virtual environment created successfully.
+                echo [INFO] Step 4: Checking for existing virtual environment at %VENV_DIR%...
+                if exist "%VENV_DIR%" (
+                    echo [INFO] Virtual environment already exists. Skipping creation.
                     exit /b 0
-                '''
-            }
+                )
+
+                echo [INFO] Step 5: Creating virtual environment at %VENV_DIR%...
+                python -m venv "%VENV_DIR%"
+                if %ERRORLEVEL% neq 0 (
+                    echo [FATAL] Failed to create virtual environment. Possible causes:
+                    echo         - Insufficient permissions on D:\\pytest_jenkins_test
+                    echo         - Antivirus blocking file creation
+                    echo         - Corrupted Python installation
+                    exit /b 1
+                )
+
+                echo [INFO] Virtual environment created successfully.
+                exit /b 0
+            '''
         }
+    }
 
         stage('Install Dependencies') {
             steps {
