@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent { 
+        label 'windows'  
+    }
 
     environment {
         QQ_EMAIL = '2466065809@qq.com'
