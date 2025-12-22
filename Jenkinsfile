@@ -90,38 +90,31 @@ pipeline {
                 script {
                     def now = new Date()
                     def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
-                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${timestamp}.log"
                     env.HTML_REPORT_FILE = "D:\\pytest_jenkins_test\\Reports\\report_${timestamp}.html"
+                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${timestamp}.log"
+
                     bat """
-                        @echo off
+                        cd /d \"${env.WORK_ROOT}\"
                         mkdir \"${env.REPORT_DIR}\" 2>nul
 
-                        cd /d \"${env.WORK_ROOT}\"
+                        echo [INFO] Running pytest with real-time logging...
 
-                        echo [INFO] Running pytest...
-                        python -m pytest Test_cases -v --tb=short ^
+                        set PYTHONUNBUFFERED=1
+                        python -m pytest Test_cases -v -s ^
+                            --tb=short ^
                             --html=\"${env.HTML_REPORT_FILE}\" ^
                             --self-contained-html ^
                             1>\"${env.TEST_OUTPUT_FILE}\" 2>&1
-
-                        if %ERRORLEVEL% neq 0 (
-                            echo [WARN] Pytest exited with non-zero code (tests may have failed).
-                        )
-
-                        if not exist \"${env.TEST_OUTPUT_FILE}\" (
-                            echo [ERROR] Console log not generated.
-                            echo [ERROR] Pytest did not generate console log. > \"${env.TEST_OUTPUT_FILE}\"
-                        )
-
-                        echo [INFO] Pytest completed.
-                        exit /b 0
                     """
 
+                    // 可选：实时打印到 Jenkins 控制台（用于调试）
                     if (fileExists(env.TEST_OUTPUT_FILE)) {
-                        def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
-                        echo "=== Pytest Console Log ===\n${content}\n=== End ==="
-                    } else {
-                        echo "[WARNING] Test output file not found."
+                        def lines = readFile(file: env.TEST_OUTPUT_FILE).split('\n')
+                        for (line in lines) {
+                            if (line.contains('[TEST LOG]')) {
+                                echo line
+                            }
+                        }
                     }
                 }
             }
