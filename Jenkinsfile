@@ -7,7 +7,7 @@ pipeline {
         QQ_EMAIL = '2466065809@qq.com'
         QQ_AUTH_CODE = 'tpyxgmecjqrndiif'
         RECIPIENT = '2466065809@qq.com'
-        REPORT_DIR = "D:\\pytest_jenkins\\Reports"
+        REPORT_DIR = "D:\\pytest_jenkins\\Reports"  // Groovy 字符串，双反斜杠
     }
 
     stages {
@@ -19,8 +19,10 @@ pipeline {
 
         stage('Create Report Directory') {
             steps {
-                bat 'mkdir "%WORKSPACE%\\report" 2>nul || exit /b 0'
-                bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
+                // 使用 %REPORT_DIR%（Windows 环境变量语法）
+                bat 'mkdir "%REPORT_DIR%" 2>nul || exit /b 0'
+                // 可选：也创建 workspace/report（如果你需要）
+                // bat 'mkdir "%WORKSPACE%\\report" 2>nul || exit /b 0'
             }
         }
 
@@ -34,30 +36,30 @@ pipeline {
         stage('Run Pytest Tests') {
             steps {
                 script {
-                    // 生成时间戳
                     def now = new Date()
                     def timestamp = String.format('%tY-%<tm-%<td_%<tH-%<tM-%<tS', now)
 
-                    env.TEST_OUTPUT_FILE = "${env.REPORT_DIR}\\pytest_console_${timestamp}.log"
-                    env.HTML_REPORT_FILE = "${env.REPORT_DIR}\\report_${timestamp}.html"
+                    // 构造完整路径（注意：这里用双反斜杠或单正斜杠均可）
+                    env.TEST_OUTPUT_FILE = "D:\\pytest_jenkins\\Reports\\pytest_console_${timestamp}.log"
+                    env.HTML_REPORT_FILE = "D:\\pytest_jenkins\\Reports\\report_${timestamp}.html"
 
-                    // 确保目录存在
-                    bat 'mkdir "${REPORT_DIR}" 2>nul || exit /b 0'
+                    // 再次确保目录存在（安全起见）
+                    bat 'mkdir "%REPORT_DIR%" 2>nul || exit /b 0'
 
-                    // 直接运行 pytest，输出到日志，并生成 HTML 报告
+                    // 运行 pytest
                     bat """
                         python -m pytest Test_cases -v --tb=short ^
-                        --html="${HTML_REPORT_FILE}" ^
+                        --html="%HTML_REPORT_FILE%" ^
                         --self-contained-html ^
-                        1>"${TEST_OUTPUT_FILE}" 2>&1
+                        1>"%TEST_OUTPUT_FILE%" 2>&1
                     """
 
-                    // 如果日志不存在，创建占位文件
+                    // 检查日志是否生成
                     if (!fileExists(env.TEST_OUTPUT_FILE)) {
-                        bat "echo [ERROR] Pytest did not generate console log. > \"${env.TEST_OUTPUT_FILE}\""
+                        bat "echo [ERROR] Pytest did not generate console log. > \"%TEST_OUTPUT_FILE%\""
                     }
 
-                    // 打印日志到 Jenkins 控制台
+                    // 打印日志到控制台
                     def content = readFile(file: env.TEST_OUTPUT_FILE, encoding: 'UTF-8')
                     echo "=== Pytest Console Log ===\n${content}\n=== End ==="
                 }
@@ -76,7 +78,7 @@ pipeline {
     post {
         always {
             script {
-                if (env.TEST_OUTPUT_FILE && fileExists(env.TEST_OUTPUT_FILE)) {
+                if (env.TEST_OUTPUTFILE && fileExists(env.TEST_OUTPUT_FILE)) {
                     archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
                 }
                 if (env.HTML_REPORT_FILE && fileExists(env.HTML_REPORT_FILE)) {
