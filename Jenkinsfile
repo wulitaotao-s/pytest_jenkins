@@ -62,7 +62,6 @@ pipeline {
         stage('Run Pytest Tests') {
             steps {
                 script {
-                    // 记录测试开始时间
                     env.TEST_START_TIME = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
                 }
                 bat """
@@ -78,15 +77,12 @@ pipeline {
     post {
         always {
             script {
-                // 记录结束时间
                 def endTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
 
-                // 归档报告
                 if (fileExists(env.HTML_REPORT_FILE)) {
                     archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
                 }
 
-                // 调用邮件脚本，传入真实时间
                 bat """
                     cd /d "${env.WORK_ROOT}"
                     python send_email.py "${env.TEST_START_TIME}" "${endTime}" "" "" "${env.HTML_REPORT_FILE}"

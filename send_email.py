@@ -23,18 +23,21 @@ def main():
         with open(html_report_file, 'r', encoding='utf-8') as f:
             soup = BeautifulSoup(f, 'html.parser')
 
-        # 定位结果表格（你的报告使用 id="results-table"）
-        table = soup.find('table', id='results-table')
-        if table:
-            for row in table.find_all('tr'):
-                classes = row.get('class', [])
-                name_cell = row.find('td', class_='col-name')
-                if name_cell:
-                    full_name = name_cell.get_text(strip=True)
-                    if 'passed' in classes:
-                        passed_tests.append(full_name)
-                    elif 'failed' in classes or 'error' in classes:
-                        failed_tests.append(full_name)
+        # 关键修正：使用 class_='results-table'（不是 id）
+        table = soup.find('table', class_='results-table')
+        if not table:
+            print("Warning: No table with class 'results-table' found.", file=sys.stderr)
+            return
+
+        for row in table.find_all('tr'):
+            classes = row.get('class', [])
+            name_cell = row.find('td', class_='col-name')
+            if name_cell:
+                full_name = name_cell.get_text(strip=True)
+                if 'passed' in classes:
+                    passed_tests.append(full_name)
+                elif 'failed' in classes or 'error' in classes:
+                    failed_tests.append(full_name)
     except Exception as e:
         print(f"Failed to parse HTML report: {e}", file=sys.stderr)
 
@@ -80,7 +83,7 @@ def main():
 
     msg.attach(MIMEText(body, "plain", "utf-8"))
 
-    # 添加 HTML 报告附件
+    # 添加附件
     if os.path.exists(html_report_file):
         with open(html_report_file, "rb") as f:
             part = MIMEBase("application", "octet-stream")
