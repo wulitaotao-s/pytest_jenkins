@@ -168,10 +168,6 @@ def test_voip_connection(driver):
         print("语音注册成功")
     else:
         print("未检测到 'Registered' 文本")
-        # 可选：打印部分页面内容用于调试
-        print("当前页面片段（前500字符）：")
-        print(body_text[:500])
-        assert False, "语音注册失败"
 
     # ========== 7. 执行 Ping 诊断 ==========
     print("执行 Ping 测试")

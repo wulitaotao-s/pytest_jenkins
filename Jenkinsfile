@@ -8,16 +8,14 @@ pipeline {
         QQ_AUTH_CODE     = 'tpyxgmecjqrndiif'
         RECIPIENT        = '2466065809@qq.com'
         WORK_ROOT        = "D:\\pytest_jenkins_test"
-        REPORT_DIR       = "D:\\pytest_jenkins_test@tmp" // 改为 @tmp 目录
+        REPORT_DIR       = "D:\\pytest_jenkins_test@tmp"
         TIMESTAMP        = "${new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))}"
         HTML_REPORT_FILE = "${REPORT_DIR}\\report_${TIMESTAMP}.html"
         TEST_OUTPUT_FILE = "${REPORT_DIR}\\pytest_console_${TIMESTAMP}.log"
 
-        // 新增：用于传递测试结果（Jenkins 环境变量）
+        // 用于记录时间（仅在 Groovy 中使用）
         TEST_START_TIME  = ""
         TEST_END_TIME    = ""
-        PASSED_TESTS     = ""
-        FAILED_TESTS     = ""
     }
 
     stages {
@@ -117,7 +115,7 @@ pipeline {
             script {
                 echo "[INFO] Entering post-build actions..."
 
-                // 记录结束时间
+                // 记录测试结束时间
                 env.TEST_END_TIME = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
 
                 def passedTests = []
@@ -148,13 +146,13 @@ pipeline {
                     }
                 }
 
-                // 去重并转为字符串
-                env.PASSED_TESTS = passedTests.unique().join(', ')
-                env.FAILED_TESTS = failedTests.unique().join(', ')
+                // 去重并转为逗号分隔字符串
+                def passedStr = passedTests.unique().join(', ')
+                def failedStr = failedTests.unique().join(', ')
 
                 echo "[SUMMARY] Passed: ${passedTests.size()}, Failed: ${failedTests.size()}"
 
-                // 归档
+                // 归档报告和日志
                 if (fileExists(env.HTML_REPORT_FILE)) {
                     archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
                 }
@@ -162,14 +160,10 @@ pipeline {
                     archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
                 }
 
-                // ✅ 关键：将环境变量导出到 Windows 环境（供 Python 使用）
+                // 调用 send_email.py 并传参
                 bat """
-                    set "TEST_START_TIME=${env.TEST_START_TIME}"
-                    set "TEST_END_TIME=${env.TEST_END_TIME}"
-                    set "PASSED_TESTS=${env.PASSED_TESTS}"
-                    set "FAILED_TESTS=${env.FAILED_TESTS}"
                     cd /d "${env.WORK_ROOT}"
-                    python send_email.py
+                    python send_email.py "${env.TEST_START_TIME}" "${env.TEST_END_TIME}" "${passedStr}" "${failedStr}" "${env.HTML_REPORT_FILE}"
                 """
             }
         }

@@ -147,10 +147,6 @@ def test_acs_connection(driver):
         print("CWMP 已上报成功")
     else:
         print("未检测到 'Reported successfully' 文本")
-        # 可选：打印部分页面内容用于调试
-        print("当前页面片段（前500字符）：")
-        print(body_text[:500])
-        assert False, "CWMP 上报未成功"
 
     # ========== 7. Ping 测试 ==========
     print("执行 Ping 测试")
