@@ -70,11 +70,12 @@ pipeline {
                 """
             }
         }
+    }
 
     post {
         always {
             script {
-                def endTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
+                def endTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('.TODO'))
 
                 // 归档 HTML 报告（用于邮件）
                 if (fileExists(env.HTML_REPORT_FILE)) {
