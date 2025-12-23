@@ -24,7 +24,7 @@ def main():
     msg["Subject"] = ""  # 标题为空
 
     # 正文为空
-    msg.attach(MIMEText("", "plain"))
+    msg.attach(MIMEText("Jenkins测试报告", "plain", "utf-8"))
 
     # 添加 HTML 报告作为附件（如果存在）
     if os.path.exists(html_report_file):
