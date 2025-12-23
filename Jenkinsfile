@@ -27,17 +27,28 @@ pipeline {
             }
         }
 
-        stage('Checkout into Custom Directory') {
-            steps {
-                dir(env.WORK_ROOT) {
-                    // 尝试强力清理（可选增强）
-                    bat 'taskkill /f /im python.exe 2>nul'
-                    bat 'timeout /t 2 /nobreak >nul'
-                    bat 'rd /s /q . 2>nul || exit /b 0'
-                    checkout scm
-                }
+    stage('Checkout into Custom Directory') {
+        steps {
+            dir(env.WORK_ROOT) {
+                // 先清理 Python 进程（忽略退出码）
+                bat '''
+                    @echo off
+                    taskkill /f /im python.exe 2>nul
+                    taskkill /f /im pythonw.exe 2>nul
+                    exit /b 0
+                '''
+
+                // 再清理目录
+                bat '''
+                    @echo off
+                    rd /s /q . 2>nul || exit /b 0
+                '''
+
+                // 最后 checkout
+                checkout scm
             }
         }
+    }
 
         stage('Create Report Directory') {
             steps {
