@@ -5,12 +5,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import element_config as ec
-import logging
 from selenium.webdriver.chrome.options import Options
+import sys
+import subprocess
+import tempfile
+import os
 import re
 import time
-import subprocess
-import sys
 
 @pytest.fixture(scope="function")
 def driver():
@@ -23,6 +24,7 @@ def driver():
     d = webdriver.Chrome(options=chrome_options)
     yield d
     d.quit()
+    return driver
 
 
 def login(driver):
@@ -46,20 +48,6 @@ def login(driver):
     # 等待首页加载
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".t-table")))
     print("登录成功，进入首页")
-    
-    
-# 配置日志
-LOG_FILE = "test_run.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding='utf-8'),  # 写入文件
-        logging.StreamHandler()  # 同时输出到控制台
-    ]
-)
-
-logger = logging.getLogger(__name__)
 
 
 def is_switch_enabled(driver, switch_selector):
@@ -218,3 +206,324 @@ def restart_test_nic_and_ping() -> bool:
     except Exception as e:
         print(f"Ping 执行异常: {e}")
         return False
+
+
+def connect_and_test_wifi(ssid: str, password: str) -> bool:
+    """
+    连接指定 Wi-Fi，验证网络连通性。
+    要求：
+      - 先扫描 SSID，最多等待 120 秒；未出现则失败
+      - 连接和获取IP总耗时 ≤15秒（从连接开始算）
+      - ping 必须使用 Wi-Fi 获取的 IP 作为源地址
+      - 打印四项关键信息
+    返回 True 表示整体测试通过，否则 False。
+    """
+    profile_name = f"__TEMP_{ssid}"
+    tmp_path = None
+    ip_address = None
+    ping_output = ""
+    test_passed = False
+
+    try:
+        # ========== 第一步：扫描目标 SSID（最多 120 秒）==========
+        print(f"开始扫描 Wi-Fi 网络，寻找 SSID: {ssid}（最多等待 120 秒）...")
+        ssid_found = False
+        for attempt in range(60):  # 每 2 秒一次，共 120 秒
+            try:
+                result = subprocess.run(
+                    'netsh wlan show networks mode=bssid',
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    stdout_text = result.stdout or ""
+                    if isinstance(stdout_text, str) and ssid in stdout_text:
+                        ssid_found = True
+                        print(f"找到目标 SSID: {ssid}")
+                        break
+                else:
+                    print(f"扫描命令返回码非零（{result.returncode}），输出：{result.stderr}")
+            except Exception as e:
+                print(f"扫描异常（第 {attempt + 1} 次）: {e}")
+            time.sleep(2)
+
+        if not ssid_found:
+            print(f"120 秒内未扫描到 SSID: {ssid}，连接失败")
+            return False
+
+        # ========== 第二步：断开当前连接 ==========
+        subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # ========== 第三步：创建并添加临时配置文件 ==========
+        xml_content = f'''<?xml version="1.0"?>
+            <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
+                <name>{profile_name}</name>
+                <SSIDConfig>
+                    <SSID><name>{ssid}</name></SSID>
+                </SSIDConfig>
+                <connectionType>ESS</connectionType>
+                <MSM>
+                    <security>
+                        <authEncryption>
+                            <authentication>WPA2PSK</authentication>
+                            <encryption>AES</encryption>
+                            <useOneX>false</useOneX>
+                        </authEncryption>
+                        <sharedKey>
+                            <keyType>passPhrase</keyType>
+                            <protected>false</protected>
+                            <keyMaterial>{password}</keyMaterial>
+                        </sharedKey>
+                    </security>
+                </MSM>
+            </WLANProfile>'''
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False, encoding='utf-8-sig') as f:
+            f.write(xml_content)
+            tmp_path = f.name
+
+        add_result = subprocess.run(
+            f'netsh wlan add profile filename="{tmp_path}"',
+            shell=True,
+            capture_output=True,
+            text=True,
+            encoding='utf-8'
+        )
+        if add_result.returncode != 0:
+            print("添加 Wi-Fi 配置文件失败")
+            return False
+
+        # ========== 第四步：发起连接 ==========
+        print("正在连接 Wi-Fi...")
+        connect_result = subprocess.run(
+            f'netsh wlan connect name="{profile_name}"',
+            shell=True,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            timeout=30
+        )
+        if connect_result.returncode != 0:
+            print("Wi-Fi 连接命令执行失败")
+            return False
+
+        # ========== 第五步：等待获取有效 IP（最多 15 秒）==========
+        start_wait_ip = time.time()
+        for _ in range(15):
+            if time.time() - start_wait_ip > 15:
+                break
+            try:
+                output = subprocess.check_output('ipconfig', shell=True, text=True, encoding='utf-8')
+                current_adapter = None
+                lines = output.splitlines()
+                for line in lines:
+                    if '适配器' in line or 'Adapter' in line:
+                        if ':' in line:
+                            current_adapter = line.strip().rstrip(':')
+                        continue
+                    if current_adapter and any(kw in current_adapter for kw in ['WLAN', '无线', 'Wi-Fi', 'Wireless']):
+                        if 'IPv4 地址' in line or 'IPv4 Address' in line:
+                            match = re.search(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', line)
+                            if match:
+                                ip = match.group()
+                                if not ip.startswith('169.254.') and ip != '0.0.0.0':
+                                    ip_address = ip
+                                    break
+                if ip_address:
+                    break
+            except Exception:
+                pass
+            time.sleep(1)
+
+        if ip_address:
+            print(f"获取地址成功：{ip_address}")
+        else:
+            print("15 秒内未获取到有效 IP 地址")
+
+        # ========== 第六步：Ping 测试（使用该 IP 作为源）==========
+        if ip_address:
+            try:
+                ping_cmd = f'ping -n 3 -S {ip_address} 8.8.8.8'
+                result = subprocess.run(
+                    ping_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    timeout=10
+                )
+                ping_output = (result.stdout or result.stderr).strip()
+            except Exception as e:
+                ping_output = f"Ping 异常: {e}"
+        else:
+            ping_output = "跳过 Ping（无有效 IP）"
+
+        print("Ping 8.8.8.8 结果（使用 Wi-Fi IP 作为源）：")
+        print(ping_output)
+
+        # ========== 第七步：判断整体结果 ==========
+        test_passed = (ip_address is not None) and ('TTL=' in ping_output)
+
+    except Exception as e:
+        print(f"函数执行异常: {e}")
+        return False
+
+    finally:
+        # ========== 清理资源 ==========
+        subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(f'netsh wlan delete profile name="{profile_name}"', shell=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+    print(f"整体测试{'通过' if test_passed else '失败'}")
+    return test_passed
+
+
+def wait_for_non_empty_value(driver, selector, timeout=15):
+    """
+    等待指定 CSS 选择器的元素存在，并且其 value 属性非空。
+    返回该 value 字符串。
+    """
+    wait = WebDriverWait(driver, timeout)
+    elem = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+    for _ in range(timeout):
+        value = elem.get_attribute("value").strip()
+        if value:
+            return value
+        time.sleep(1)
+    assert False, f"元素 {selector} 的 value 在 {timeout} 秒内未被填充"
+
+
+def verify_pppoe_internet_via_web_ping(driver):
+    """
+    内部函数：通过 Web 界面 Ping www.jd.com 验证 PPPoE 拨号后互联网是否可达。
+    不修改配置，仅验证当前状态。
+    """
+    """测试 WAN PPPoE 模式 + Ping www.jd.com 连通性"""
+    # ========== 1. 登录 ==========
+    login(driver)
+
+    # ========== 2. 进入 Basic > WAN 页面 ==========
+    print(" 跳转到 WAN 配置页面")
+    driver.get(ec.Basic_wan)
+    wait = WebDriverWait(driver, 15)
+
+    # ========== 3. 配置 WAN 为 PPPoE 模式 ==========
+    print(" 配置 WAN 为 PPPoE 模式")
+
+    # 选择 Request Name: 2_INTERNET_R_VID_100
+    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
+    request_name_input.click()
+    internet_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_INTERNET)))
+    internet_option.click()
+
+    # 设置 Access Type = Route
+    access_type_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type)))
+    access_type_input.click()
+    route_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type_Route)))
+    route_option.click()
+
+    # 设置 Connection Mode = PPPoE
+    conn_mode_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode)))
+    conn_mode_input.click()
+    pppoe_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode_PPPoE)))
+    pppoe_option.click()
+
+    # 设置 Username 和 Password
+    print(" 设置 PPPoE 用户名和密码")
+    safe_set_input_value(driver, ec.wan_pppoe_name, "PPPOE")  # 示例值，请替换为实际账号
+    safe_set_input_value(driver, ec.wan_pppoe_password, "PPPOE")  # 示例值，请替换为实际密码
+
+    # 设置 VLAN ID = 100
+    print(" 设置 VLAN ID = 100")
+    safe_set_input_value(driver, ec.wan_VLAN_ID, "100")
+
+    # 设置 MTU = 1500
+    print(" 设置 MTU = 1500")
+    safe_set_input_value(driver, ec.wan_MTU, "1500")
+
+    # 启用 Nat Enable 开关
+    switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_nat_enable)))
+    if "t-is-checked" not in switch.get_attribute("class"):
+        switch.click()
+        print(" 启用 Nat Enable")
+    else:
+        print(" Nat Enable 已启用")
+
+    # 设置 Protocol Version = IPv4/IPv6
+    ipv4_ipv6_radio = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_ipv4ipv6)))
+    if not ipv4_ipv6_radio.is_selected():
+        ipv4_ipv6_radio.click()
+        print(" 设置协议版本为 IPv4/IPv6")
+
+    # 设置 Connection Mode = DHCPv6（可选，根据设备）
+    dhcpv6_option_list = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_IPv6_Connection_Mode)))
+    dhcpv6_option_list.click()
+    dhcpv6_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_IPv6_Connection_Mode_DHCP)))
+    dhcpv6_option.click()
+
+    # 启用 WAN 开关
+    switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Enable)))
+    if "t-is-checked" not in switch.get_attribute("class"):
+        switch.click()
+        print(" 启用 WAN")
+    else:
+        print(" WAN 已启用")
+
+    # 保存配置
+    print(" 保存 WAN 配置")
+    save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_commit)))
+    save_btn.click()
+    time.sleep(15)
+
+    # ========== 4. 执行 Ping 测试 ==========
+    print(" 跳转到系统测试页面")
+    driver.get(ec.Advanced_System_System_Test)
+    wait = WebDriverWait(driver, 15)
+
+    # 设置 Ping 次数
+    safe_set_input_value(driver, ec.System_Test_Ping_Repeat_Times, "3")
+
+    # 选择接口：Internet
+    print(" 选择 Ping 接口 = Internet")
+    interface_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface)))
+    driver.execute_script("arguments[0].click();", interface_input)
+    internet_opt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_INTERNET)))
+    internet_opt.click()
+
+    # 设置目标地址
+    print(" 设置 Ping 目标地址 = www.jd.com")
+    safe_set_input_value(driver, ec.System_Test_Ping_Address, "www.jd.com")
+
+    # 点击开始
+    start_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Start)))
+    start_btn.click()
+    time.sleep(20)  # 等待 Ping 完成
+
+    # ========== 5. 检查结果：通过 page_source 全文搜索 ==========
+    print(" 检查 Ping 结果...")
+    page_source = driver.page_source
+
+    # 匹配模式：64 bytes from [任意IP]: icmp_seq=... time=...
+    pattern = r'64 bytes from \d+\.\d+\.\d+\.\d+: icmp_seq=\d+ ttl=\d+ time=\d+\.\d+ ms'
+
+    if re.search(pattern, page_source):
+        print("Ping www.jd.com 成功")
+        print("\nPing 详细输出：")
+        print("=" * 50)
+        matches = re.findall(pattern, page_source)
+        for match in matches:
+            print(match)
+        print("=" * 50)
+    else:
+        print("Ping www.jd.com 失败：未收到有效响应")
+        assert False, "Ping www.jd.com 失败：未收到有效响应"
+
+
