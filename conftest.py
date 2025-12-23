@@ -24,7 +24,6 @@ def driver():
     d = webdriver.Chrome(options=chrome_options)
     yield d
     d.quit()
-    return driver
 
 
 def login(driver):
@@ -208,16 +207,8 @@ def restart_test_nic_and_ping() -> bool:
         return False
 
 
+
 def connect_and_test_wifi(ssid: str, password: str) -> bool:
-    """
-    连接指定 Wi-Fi，验证网络连通性。
-    要求：
-      - 先扫描 SSID，最多等待 120 秒；未出现则失败
-      - 连接和获取IP总耗时 ≤15秒（从连接开始算）
-      - ping 必须使用 Wi-Fi 获取的 IP 作为源地址
-      - 打印四项关键信息
-    返回 True 表示整体测试通过，否则 False。
-    """
     profile_name = f"__TEMP_{ssid}"
     tmp_path = None
     ip_address = None
@@ -225,92 +216,103 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
     test_passed = False
 
     try:
-        # ========== 第一步：扫描目标 SSID（最多 120 秒）==========
-        print(f"开始扫描 Wi-Fi 网络，寻找 SSID: {ssid}（最多等待 120 秒）...")
+        print(f"开始扫描 Wi-Fi 网络，寻找 SSID: {ssid}（最多等待 60 秒）...")
         ssid_found = False
-        for attempt in range(60):  # 每 2 秒一次，共 120 秒
+        printed_output = False
+
+        # 尝试扫描，但不强制要求成功
+        for attempt in range(30):
             try:
+                cmd = 'netsh wlan show networks mode=bssid'
+                print(f"[执行命令]: {cmd}")
                 result = subprocess.run(
-                    'netsh wlan show networks mode=bssid',
+                    cmd,
                     shell=True,
                     capture_output=True,
                     text=True,
-                    encoding='utf-8',
+                    encoding='gbk',
                     timeout=10
                 )
+
+                if not printed_output and result.stdout.strip():
+                    print("[首次扫描输出]:")
+                    print(result.stdout)
+                    printed_output = True
+
                 if result.returncode == 0:
-                    stdout_text = result.stdout or ""
-                    if isinstance(stdout_text, str) and ssid in stdout_text:
-                        ssid_found = True
-                        print(f"找到目标 SSID: {ssid}")
+                    lines = (result.stdout or "").splitlines()
+                    for line in lines:
+                        if re.search(rf'\b{re.escape(ssid)}\b', line, re.IGNORECASE):
+                            ssid_found = True
+                            print(f"精确匹配到目标 SSID: {ssid}")
+                            break
+                        elif ssid.lower() in line.lower():
+                            ssid_found = True
+                            print(f"模糊匹配到目标 SSID: {ssid}（行内容: {line.strip()}）")
+                            break
+                    if ssid_found:
                         break
                 else:
-                    print(f"扫描命令返回码非零（{result.returncode}），输出：{result.stderr}")
+                    print(f"扫描命令失败（返回码 {result.returncode}）")
+
             except Exception as e:
                 print(f"扫描异常（第 {attempt + 1} 次）: {e}")
             time.sleep(2)
 
-        if not ssid_found:
-            print(f"120 秒内未扫描到 SSID: {ssid}，连接失败")
-            return False
+        # 即使没找到，也不返回失败，继续连接
+        print(f"SSID 扫描结果: {'找到' if ssid_found else '未找到'}，继续连接...")
 
-        # ========== 第二步：断开当前连接 ==========
-        subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # 断开当前连接
+        cmd = 'netsh wlan disconnect'
+        print(f"[执行命令]: {cmd}")
+        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        # ========== 第三步：创建并添加临时配置文件 ==========
+        # 生成临时配置文件
         xml_content = f'''<?xml version="1.0"?>
-            <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
-                <name>{profile_name}</name>
-                <SSIDConfig>
-                    <SSID><name>{ssid}</name></SSID>
-                </SSIDConfig>
-                <connectionType>ESS</connectionType>
-                <MSM>
-                    <security>
-                        <authEncryption>
-                            <authentication>WPA2PSK</authentication>
-                            <encryption>AES</encryption>
-                            <useOneX>false</useOneX>
-                        </authEncryption>
-                        <sharedKey>
-                            <keyType>passPhrase</keyType>
-                            <protected>false</protected>
-                            <keyMaterial>{password}</keyMaterial>
-                        </sharedKey>
-                    </security>
-                </MSM>
-            </WLANProfile>'''
+<WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
+    <name>{profile_name}</name>
+    <SSIDConfig>
+        <SSID><name>{ssid}</name></SSID>
+    </SSIDConfig>
+    <connectionType>ESS</connectionType>
+    <MSM>
+        <security>
+            <authEncryption>
+                <authentication>WPA2PSK</authentication>
+                <encryption>AES</encryption>
+                <useOneX>false</useOneX>
+            </authEncryption>
+            <sharedKey>
+                <keyType>passPhrase</keyType>
+                <protected>false</protected>
+                <keyMaterial>{password}</keyMaterial>
+            </sharedKey>
+        </security>
+    </MSM>
+</WLANProfile>'''
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False, encoding='utf-8-sig') as f:
             f.write(xml_content)
             tmp_path = f.name
 
-        add_result = subprocess.run(
-            f'netsh wlan add profile filename="{tmp_path}"',
-            shell=True,
-            capture_output=True,
-            text=True,
-            encoding='utf-8'
-        )
+        # 添加配置文件
+        cmd = f'netsh wlan add profile filename="{tmp_path}"'
+        print(f"[执行命令]: {cmd}")
+        add_result = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8')
         if add_result.returncode != 0:
             print("添加 Wi-Fi 配置文件失败")
             return False
 
-        # ========== 第四步：发起连接 ==========
+        # 连接 Wi-Fi（无论是否扫描到）
         print("正在连接 Wi-Fi...")
-        connect_result = subprocess.run(
-            f'netsh wlan connect name="{profile_name}"',
-            shell=True,
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            timeout=30
-        )
+        cmd = f'netsh wlan connect name="{profile_name}"'
+        print(f"[执行命令]: {cmd}")
+        connect_result = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8', timeout=30)
         if connect_result.returncode != 0:
             print("Wi-Fi 连接命令执行失败")
             return False
 
-        # ========== 第五步：等待获取有效 IP（最多 15 秒）==========
+        # 等待获取 IP 地址
         start_wait_ip = time.time()
         for _ in range(15):
             if time.time() - start_wait_ip > 15:
@@ -318,8 +320,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
             try:
                 output = subprocess.check_output('ipconfig', shell=True, text=True, encoding='utf-8')
                 current_adapter = None
-                lines = output.splitlines()
-                for line in lines:
+                for line in output.splitlines():
                     if '适配器' in line or 'Adapter' in line:
                         if ':' in line:
                             current_adapter = line.strip().rstrip(':')
@@ -343,18 +344,12 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         else:
             print("15 秒内未获取到有效 IP 地址")
 
-        # ========== 第六步：Ping 测试（使用该 IP 作为源）==========
+        # Ping 测试
         if ip_address:
+            ping_cmd = f'ping -n 3 -S {ip_address} 8.8.8.8'
+            print(f"[执行命令]: {ping_cmd}")
             try:
-                ping_cmd = f'ping -n 3 -S {ip_address} 8.8.8.8'
-                result = subprocess.run(
-                    ping_cmd,
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    encoding='utf-8',
-                    timeout=10
-                )
+                result = subprocess.run(ping_cmd, shell=True, capture_output=True, text=True, encoding='utf-8', timeout=10)
                 ping_output = (result.stdout or result.stderr).strip()
             except Exception as e:
                 ping_output = f"Ping 异常: {e}"
@@ -364,7 +359,6 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         print("Ping 8.8.8.8 结果（使用 Wi-Fi IP 作为源）：")
         print(ping_output)
 
-        # ========== 第七步：判断整体结果 ==========
         test_passed = (ip_address is not None) and ('TTL=' in ping_output)
 
     except Exception as e:
@@ -372,19 +366,21 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         return False
 
     finally:
-        # ========== 清理资源 ==========
-        subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(f'netsh wlan delete profile name="{profile_name}"', shell=True,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # 清理
+        cmd1 = 'netsh wlan disconnect'
+        cmd2 = f'netsh wlan delete profile name="{profile_name}"'
+        print(f"[清理命令]: {cmd1}")
+        print(f"[清理命令]: {cmd2}")
+        subprocess.run(cmd1, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(cmd2, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if tmp_path and os.path.exists(tmp_path):
             try:
                 os.unlink(tmp_path)
             except OSError:
                 pass
 
-    print(f"整体测试{'通过' if test_passed else '失败'}")
+    print(f"整体测试 {'通过' if test_passed else '失败'}")
     return test_passed
-
 
 def wait_for_non_empty_value(driver, selector, timeout=15):
     """

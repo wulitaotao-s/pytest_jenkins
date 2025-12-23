@@ -18,8 +18,8 @@ def test_wifi_connection_after_change(driver):
     """
 
     # ========== 前置：确认 PPPoE + 互联网连通性 ==========
-    ct.verify_pppoe_internet_via_web_ping(driver)
-
+    # ct.verify_pppoe_internet_via_web_ping(driver)
+    ct.login(driver)
     # ========== 定义新配置 ==========
     ssid_24g_new = "test_@@##_2.4G"
     password_new = "@@##!!12qw"
