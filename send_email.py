@@ -1,72 +1,62 @@
 import sys
 import os
+import re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from bs4 import BeautifulSoup
+
+def extract_summary_counts(html_content):
+    """
+    从 HTML 的 Summary 部分提取 Passed / Failed 数量
+    匹配类似: "4 Failed, 3 Passed, 0 Skipped"
+    """
+    passed = failed = 0
+
+    # 查找 Summary 行（通常在 <p class="filter"> 或文本中）
+    summary_match = re.search(r'(\d+)\s+Failed,\s+(\d+)\s+Passed', html_content)
+    if summary_match:
+        failed = int(summary_match.group(1))
+        passed = int(summary_match.group(2))
+    else:
+        # 备用：分别匹配
+        failed_match = re.search(r'(\d+)\s+Failed', html_content)
+        passed_match = re.search(r'(\d+)\s+Passed', html_content)
+        if failed_match:
+            failed = int(failed_match.group(1))
+        if passed_match:
+            passed = int(passed_match.group(1))
+
+    return passed, failed
 
 def main():
     if len(sys.argv) != 6:
-        print("Usage: python send_email.py <start_time> <end_time> <passed_list_str> <failed_list_str> <html_report_file>")
+        print("Usage: python send_email.py <start_time> <end_time> <...> <html_report_file>")
         sys.exit(1)
 
     start_time = sys.argv[1] or "未知"
     end_time = sys.argv[2] or "未知"
     html_report_file = sys.argv[5]
 
-    passed_tests = []
-    failed_tests = []
+    passed = failed = 0
 
     try:
         with open(html_report_file, 'r', encoding='utf-8') as f:
-            soup = BeautifulSoup(f, 'html.parser')
-
-        # 关键修正：使用 class_='results-table'（不是 id）
-        table = soup.find('table', class_='results-table')
-        if not table:
-            print("Warning: No table with class 'results-table' found.", file=sys.stderr)
-            return
-
-        for row in table.find_all('tr'):
-            classes = row.get('class', [])
-            name_cell = row.find('td', class_='col-name')
-            if name_cell:
-                full_name = name_cell.get_text(strip=True)
-                if 'passed' in classes:
-                    passed_tests.append(full_name)
-                elif 'failed' in classes or 'error' in classes:
-                    failed_tests.append(full_name)
+            content = f.read()
+        passed, failed = extract_summary_counts(content)
     except Exception as e:
         print(f"Failed to parse HTML report: {e}", file=sys.stderr)
 
-    # 构建邮件正文
-    body_lines = [
-        "Jenkins 自动化测试报告",
-        "",
-        f"测试开始时间：{start_time}",
-        f"测试结束时间：{end_time}",
-        "",
-        f"通过用例（{len(passed_tests)} 个）："
-    ]
+    # 构建简洁邮件正文
+    body = f"""Jenkins 自动化测试报告
 
-    if passed_tests:
-        for test in passed_tests:
-            body_lines.append(f"  • {test}")
-    else:
-        body_lines.append("  （无）")
+测试开始时间：{start_time}
+测试结束时间：{end_time}
 
-    body_lines.append("")
-    body_lines.append(f"失败用例（{len(failed_tests)} 个）：")
-
-    if failed_tests:
-        for test in failed_tests:
-            body_lines.append(f"  • {test}")
-    else:
-        body_lines.append("  （无）")
-
-    body = "\n".join(body_lines)
+通过用例：{passed} 个
+失败用例：{failed} 个
+"""
 
     sender_email = os.getenv("QQ_EMAIL")
     password = os.getenv("QQ_AUTH_CODE")
