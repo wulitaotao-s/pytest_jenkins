@@ -9,9 +9,6 @@ pipeline {
         RECIPIENT        = '2466065809@qq.com'
         WORK_ROOT        = "D:\\pytest_jenkins_test"
         REPORT_DIR       = "D:\\pytest_jenkins_test@tmp"
-        TIMESTAMP        = "${new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))}"
-        HTML_REPORT_FILE = "${REPORT_DIR}\\report_${TIMESTAMP}.html"
-        LOG_FILE         = "${REPORT_DIR}\\log_${TIMESTAMP}.txt"
     }
 
     stages {
@@ -59,11 +56,20 @@ pipeline {
             }
         }
 
-        stage('Run Pytest Tests') {
+        stage('Set Dynamic Variables') {
             steps {
                 script {
+                    def ts = new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))
+                    env.TIMESTAMP = ts
+                    env.HTML_REPORT_FILE = "${env.REPORT_DIR}\\report_${ts}.html"
+                    env.LOG_FILE = "${env.REPORT_DIR}\\log_${ts}.txt"
                     env.TEST_START_TIME = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
                 }
+            }
+        }
+
+        stage('Run Pytest Tests') {
+            steps {
                 bat """
                     cd /d \"${env.WORK_ROOT}\"
                     powershell -Command "python -m pytest Test_cases -v --tb=short --html='${env.HTML_REPORT_FILE}' --self-contained-html 2>&1 | Tee-Object -FilePath '${env.LOG_FILE}'"
@@ -75,19 +81,15 @@ pipeline {
     post {
         always {
             script {
-                def endTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('.TODO'))
+                def endTime = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
 
-                // 归档 HTML 报告（用于邮件）
                 if (fileExists(env.HTML_REPORT_FILE)) {
                     archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
                 }
-
-                // 可选：也归档日志（方便在 Jenkins 上查看）
                 if (fileExists(env.LOG_FILE)) {
                     archiveArtifacts artifacts: env.LOG_FILE, allowEmptyArchive: true
                 }
 
-                // 发送邮件（只附 HTML 报告）
                 bat """
                     cd /d "${env.WORK_ROOT}"
                     python send_email.py "${env.TEST_START_TIME}" "${endTime}" "" "" "${env.HTML_REPORT_FILE}"
