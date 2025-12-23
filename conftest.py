@@ -6,11 +6,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import element_config as ec
 import logging
-import subprocess
-import time
-import re
 from selenium.webdriver.chrome.options import Options
-
+import re
+import time
+import subprocess
+import sys
 
 @pytest.fixture(scope="function")
 def driver():
@@ -125,75 +125,96 @@ def safe_set_input_value(driver, element_selector, value):
 
 def restart_test_nic_and_ping() -> bool:
     """
-    1. 禁用再启用名为 'Test' 的网卡
-    2. 等待其获取 IPv4 地址（使用 netsh 查询）
-    3. 使用 -S 指定源地址 ping www.jd.com
+    1. 使用 WMI 禁用再启用名为 'Test' 的网卡（无需管理员权限）
+    2. 等待获取有效 IPv4 地址（非 169.254.x.x）
+    3. 用 -S 指定源地址 ping www.jd.com
     4. 返回是否 ping 通
     """
     nic_name = "Test"
 
-    def run_cmd(cmd, shell=True):
-        result = subprocess.run(cmd, shell=shell, capture_output=True, text=True)
-        return result
+    # === 尝试导入 pywin32 ===
+    try:
+        import win32com.client
+    except ImportError:
+        print("错误: 未安装 pywin32，请运行 'pip install pywin32'", file=sys.stderr)
+        return False
 
-    # === 1. 禁用网卡 ===
+    # === 1. 禁用网卡（WMI）===
     print(f"→ 正在禁用网卡 '{nic_name}'...")
-    res = run_cmd(f'netsh interface set interface "{nic_name}" admin=disabled')
-    if res.returncode != 0:
-        print(f"禁用失败: {res.stderr.strip()}")
+    try:
+        wmi = win32com.client.GetObject("winmgmts:")
+        disabled = False
+        for nic in wmi.InstancesOf("Win32_NetworkAdapter"):
+            if nic.NetEnabled and nic.Name == nic_name:
+                nic.Disable()
+                disabled = True
+                break
+        if not disabled:
+            print("  (网卡可能已禁用)")
+    except Exception as e:
+        print(f"⚠️ 禁用失败: {e}")
+        return False
+    time.sleep(2)
+
+    # === 2. 启用网卡（WMI）===
+    print(f"→ 正在启用网卡 '{nic_name}'...")
+    try:
+        enabled = False
+        for nic in wmi.InstancesOf("Win32_NetworkAdapter"):
+            if not nic.NetEnabled and nic.Name == nic_name:
+                nic.Enable()
+                enabled = True
+                break
+        if not enabled:
+            print("  (网卡可能已启用)")
+    except Exception as e:
+        print(f"启用失败: {e}")
         return False
     time.sleep(3)
 
-    # === 2. 启用网卡 ===
-    print(f"→ 正在启用网卡 '{nic_name}'...")
-    res = run_cmd(f'netsh interface set interface "{nic_name}" admin=enabled')
-    if res.returncode != 0:
-        print(f"启用失败: {res.stderr.strip()}")
-        return False
-    time.sleep(5)  # 给 DHCP 时间获取地址
+    # === 3. 获取 IPv4 地址（netsh）===
+    print(f"→ 等待 '{nic_name}' 获取有效 IPv4 地址...")
+    ip_address = None
+    for attempt in range(12):
+        try:
+            res = subprocess.run(
+                ['netsh', 'interface', 'ip', 'show', 'config', nic_name],
+                capture_output=True, text=True, timeout=10
+            )
+            if res.returncode == 0:
+                match = re.search(r'(?:IP\s+地址|IPv4 Address):\s+(\d+\.\d+\.\d+\.\d+)', res.stdout, re.IGNORECASE)
+                if match:
+                    ip = match.group(1)
+                    if not ip.startswith("169.254"):  # 排除 DHCP 失败地址
+                        ip_address = ip
+                        break
+        except:
+            pass
+        print(f"  尝试 {attempt + 1}/12：未获取到有效 IP，等待 3 秒...")
+        time.sleep(3)
 
-    # === 3. 获取该网卡的 IPv4 地址（使用 netsh）===
-    print(f"→ 正在获取 '{nic_name}' 的 IPv4 地址...")
-    for attempt in range(10):
-        res = run_cmd(f'netsh interface ip show config "{nic_name}"')
-        if res.returncode != 0:
-            print("无法运行 netsh")
-            return False
-
-        # 匹配 IPv4 地址：支持中英文显示
-        # 中文：IP 地址: 192.168.10.2
-        # 英文：IPv4 Address: 192.168.10.2
-        match = re.search(r'(?:IP 地址|IPv4 Address):\s+(\d+\.\d+\.\d+\.\d+)', res.stdout, re.IGNORECASE)
-        if match:
-            ip_address = match.group(1)
-            print(f"成功获取 IP: {ip_address}")
-            break
-        else:
-            print(f"尝试 {attempt + 1}/10：未获取到 IP，等待 3 秒...")
-            time.sleep(3)
-    else:
-        print("超时：未能获取到 IPv4 地址")
+    if not ip_address:
+        print("超时：未能获取有效 IPv4 地址")
         return False
-    # === 4. 使用 -S 指定源地址 ping www.jd.com ===
+    print(f"获取到 IP: {ip_address}")
+
+    # === 4. Ping 测试 ===
     print(f"→ 使用源 IP {ip_address} ping www.jd.com ...")
     ping_cmd = f'ping -S {ip_address} www.jd.com -n 4'
-    res = run_cmd(ping_cmd)
-
-    # 🔹 完整打印 ping 的输出（stdout + stderr）
-    print("\n" + "="*60)
-    print("Ping 命令执行结果:")
-    print("="*60)
-    if res.stdout.strip():
-        print(res.stdout)
-    if res.stderr.strip():
-        print("标准错误输出（stderr）:")
-        print(res.stderr)
-    print("="*60)
-
-    # === 5. 判断是否 ping 通 ===
-    if "TTL=" in res.stdout or "time=" in res.stdout:
-        print(" Ping 成功！")
-        return True
-    else:
-        print(" Ping 失败：未收到有效响应")
+    try:
+        res = subprocess.run(ping_cmd, shell=True, capture_output=True, text=True, timeout=30)
+        stdout = res.stdout
+        # 打印结果（可选，用于调试）
+        print("\n" + "="*50)
+        print("Ping 输出:")
+        print(stdout.strip())
+        print("="*50)
+        if "TTL=" in stdout or "time=" in stdout:
+            print("Ping 成功！")
+            return True
+        else:
+            print("Ping 失败：无有效响应")
+            return False
+    except Exception as e:
+        print(f"Ping 执行异常: {e}")
         return False
