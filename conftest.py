@@ -140,7 +140,7 @@ def restart_test_nic_and_ping() -> bool:
     print(f"→ 正在禁用网卡 '{nic_name}'...")
     res = run_cmd(f'netsh interface set interface "{nic_name}" admin=disabled')
     if res.returncode != 0:
-        print(f"❌ 禁用失败: {res.stderr.strip()}")
+        print(f"禁用失败: {res.stderr.strip()}")
         return False
     time.sleep(3)
 
@@ -148,7 +148,7 @@ def restart_test_nic_and_ping() -> bool:
     print(f"→ 正在启用网卡 '{nic_name}'...")
     res = run_cmd(f'netsh interface set interface "{nic_name}" admin=enabled')
     if res.returncode != 0:
-        print(f"❌ 启用失败: {res.stderr.strip()}")
+        print(f"启用失败: {res.stderr.strip()}")
         return False
     time.sleep(5)  # 给 DHCP 时间获取地址
 
@@ -166,13 +166,13 @@ def restart_test_nic_and_ping() -> bool:
         match = re.search(r'(?:IP 地址|IPv4 Address):\s+(\d+\.\d+\.\d+\.\d+)', res.stdout, re.IGNORECASE)
         if match:
             ip_address = match.group(1)
-            print(f"✅ 成功获取 IP: {ip_address}")
+            print(f"成功获取 IP: {ip_address}")
             break
         else:
-            print(f"⏳ 尝试 {attempt + 1}/10：未获取到 IP，等待 3 秒...")
+            print(f"尝试 {attempt + 1}/10：未获取到 IP，等待 3 秒...")
             time.sleep(3)
     else:
-        print("❌ 超时：未能获取到 IPv4 地址")
+        print("超时：未能获取到 IPv4 地址")
         return False
     # === 4. 使用 -S 指定源地址 ping www.jd.com ===
     print(f"→ 使用源 IP {ip_address} ping www.jd.com ...")
