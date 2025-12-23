@@ -1,6 +1,6 @@
 pipeline {
-    agent { 
-        label 'windows'  
+    agent {
+        label 'windows'
     }
 
     environment {
@@ -8,12 +8,12 @@ pipeline {
         QQ_AUTH_CODE     = 'tpyxgmecjqrndiif'
         RECIPIENT        = '2466065809@qq.com'
         WORK_ROOT        = "D:\\pytest_jenkins_test"
-        REPORT_DIR       = "D:\\pytest_jenkins_test\\Reports"
+        REPORT_DIR       = "D:\\pytest_jenkins_test@tmp" // 改为 @tmp 目录
         TIMESTAMP        = "${new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))}"
-        HTML_REPORT_FILE = "D:\\pytest_jenkins_test\\Reports\\report_${TIMESTAMP}.html"
-        TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${TIMESTAMP}.log"
+        HTML_REPORT_FILE = "${REPORT_DIR}\\report_${TIMESTAMP}.html"
+        TEST_OUTPUT_FILE = "${REPORT_DIR}\\pytest_console_${TIMESTAMP}.log"
 
-        // 新增：用于传递测试结果
+        // 新增：用于传递测试结果（Jenkins 环境变量）
         TEST_START_TIME  = ""
         TEST_END_TIME    = ""
         PASSED_TESTS     = ""
@@ -95,7 +95,6 @@ pipeline {
         stage('Run Pytest Tests') {
             steps {
                 script {
-                    // 记录测试开始时间（Jenkins 时间）
                     env.TEST_START_TIME = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
                 }
                 bat """
@@ -118,57 +117,44 @@ pipeline {
             script {
                 echo "[INFO] Entering post-build actions..."
 
-                // 记录测试结束时间
+                // 记录结束时间
                 env.TEST_END_TIME = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
 
-                // 初始化列表
                 def passedTests = []
                 def failedTests = []
 
-                // 从 pytest 日志中提取测试结果
                 if (fileExists(env.TEST_OUTPUT_FILE)) {
                     def content = readFile(file: env.TEST_OUTPUT_FILE)
                     def lines = content.split('\n')
 
                     for (def line : lines) {
                         line = line.trim()
-                        // 匹配通过的用例：如 "Test_cases/test_xxx.py::test_yyy PASSED"
                         if (line =~ /^.*PASSED$/) {
                             def match = (line =~ /^(.+?)\s+PASSED$/)
                             if (match) {
-                                def testId = match[0][1].trim()
-                                passedTests.add(testId)
+                                passedTests.add(match[0][1].trim())
                             }
-                        }
-                        // 匹配失败/错误的用例
-                        else if (line =~ /^.*FAILED$/) {
+                        } else if (line =~ /^.*FAILED$/) {
                             def match = (line =~ /^(.+?)\s+FAILED$/)
                             if (match) {
-                                def testId = match[0][1].trim()
-                                failedTests.add(testId)
+                                failedTests.add(match[0][1].trim())
                             }
-                        }
-                        else if (line =~ /^.*ERROR$/) {
+                        } else if (line =~ /^.*ERROR$/) {
                             def match = (line =~ /^(.+?)\s+ERROR$/)
                             if (match) {
-                                def testId = match[0][1].trim()
-                                failedTests.add(testId)
+                                failedTests.add(match[0][1].trim())
                             }
                         }
                     }
                 }
 
-                // 去重（防止重复记录）
-                passedTests = passedTests.unique()
-                failedTests = failedTests.unique()
-
-                // 转为逗号分隔字符串（供 send_email.py 使用）
-                env.PASSED_TESTS = passedTests.join(', ')
-                env.FAILED_TESTS = failedTests.join(', ')
+                // 去重并转为字符串
+                env.PASSED_TESTS = passedTests.unique().join(', ')
+                env.FAILED_TESTS = failedTests.unique().join(', ')
 
                 echo "[SUMMARY] Passed: ${passedTests.size()}, Failed: ${failedTests.size()}"
 
-                // 归档报告和日志
+                // 归档
                 if (fileExists(env.HTML_REPORT_FILE)) {
                     archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
                 }
@@ -176,13 +162,15 @@ pipeline {
                     archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
                 }
 
-                // 发送邮件
-                if (fileExists("${env.WORK_ROOT}/send_email.py")) {
-                    echo "[INFO] Sending email with test summary..."
-                    bat "cd /d \"${env.WORK_ROOT}\" && python send_email.py"
-                } else {
-                    echo "[WARN] send_email.py not found. Skipping email."
-                }
+                // ✅ 关键：将环境变量导出到 Windows 环境（供 Python 使用）
+                bat """
+                    set "TEST_START_TIME=${env.TEST_START_TIME}"
+                    set "TEST_END_TIME=${env.TEST_END_TIME}"
+                    set "PASSED_TESTS=${env.PASSED_TESTS}"
+                    set "FAILED_TESTS=${env.FAILED_TESTS}"
+                    cd /d "${env.WORK_ROOT}"
+                    python send_email.py
+                """
             }
         }
     }

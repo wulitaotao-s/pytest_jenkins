@@ -1,44 +1,42 @@
 import os
 import smtplib
-import sys
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+import sys
 
 def main():
+    # 获取环境变量（必须先用 bat set 设置）
     sender_email = os.getenv("QQ_EMAIL")
     password = os.getenv("QQ_AUTH_CODE")
     receiver_email = os.getenv("RECIPIENT")
     html_report_file = os.getenv("HTML_REPORT_FILE")
 
-    # 新增：测试结果环境变量（需 Jenkins 提供）
+    # 从环境变量读取测试结果
     start_time = os.getenv("TEST_START_TIME", "未知")
     end_time = os.getenv("TEST_END_TIME", "未知")
     passed_str = os.getenv("PASSED_TESTS", "")
     failed_str = os.getenv("FAILED_TESTS", "")
 
     # 拆分为列表
-    passed_list = [t.strip() for t in passed_str.split(",")] if passed_str else []
-    failed_list = [t.strip() for t in failed_str.split(",")] if failed_str else []
+    passed_list = [t.strip() for t in passed_str.split(',') if t.strip()]
+    failed_list = [t.strip() for t in failed_str.split(',') if t.strip()]
 
-    # 过滤空字符串
-    passed_list = [t for t in passed_list if t]
-    failed_list = [t for t in failed_list if t]
-
-    # 检查必要环境变量（至少要有发件人、收件人、报告路径）
-    if not all([sender_correct := sender_email, password, receiver_email]):
+    # 检查必要变量
+    if not all([sender_email, password, receiver_email]):
         print("Missing required email environment variables", file=sys.stderr)
-        sys.exit(1)
+        return
 
     # 构建邮件正文
-    body_lines = []
-    body_lines.append("Jenkins 自动化测试报告")
-    body_lines.append("")
-    body_lines.append(f"测试开始时间：{start_time}")
-    body_lines.append(f"测试结束时间：{end_time}")
-    body_lines.append("")
-    body_lines.append(f"✅ 通过用例（{len(passed_list)} 个）：")
+    body_lines = [
+        "Jenkins 自动化测试报告",
+        "",
+        f"测试开始时间：{start_time}",
+        f"测试结束时间：{end_time}",
+        "",
+        f"通过用例（{len(passed_list)} 个）："
+    ]
     if passed_list:
         for test in passed_list:
             body_lines.append(f"  • {test}")
@@ -46,7 +44,7 @@ def main():
         body_lines.append("  （无）")
 
     body_lines.append("")
-    body_lines.append(f"❌ 失败用例（{len(failed_list)} 个）：")
+    body_lines.append(f"失败用例（{len(failed_list)} 个）：")
     if failed_list:
         for test in failed_list:
             body_lines.append(f"  • {test}")
@@ -55,26 +53,22 @@ def main():
 
     body = "\n".join(body_lines)
 
-    # 创建邮件对象
+    # 创建邮件
     msg = MIMEMultipart()
     msg["From"] = sender_email
     msg["To"] = receiver_email
     msg["Subject"] = "Jenkins测试报告"
 
-    # 添加正文（UTF-8）
     msg.attach(MIMEText(body, "plain", "utf-8"))
 
-    # 添加 HTML 报告附件（如果存在）
+    # 添加 HTML 报告附件
     if html_report_file and os.path.exists(html_report_file):
         with open(html_report_file, "rb") as f:
             part = MIMEBase('application', 'octet-stream')
             part.set_payload(f.read())
         encoders.encode_base64(part)
         filename = os.path.basename(html_report_file)
-        part.add_header(
-            'Content-Disposition',
-            f'attachment; filename="{filename}"'
-        )
+        part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
         msg.attach(part)
     else:
         print(f"Warning: HTML report not found at {html_report_file}", file=sys.stderr)
@@ -86,10 +80,9 @@ def main():
         server.login(sender_email, password)
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
-        print("Email with summary and report sent successfully")
+        print("Email sent successfully")
     except Exception as e:
         print(f"Failed to send email: {e}", file=sys.stderr)
-        sys.exit(1)
 
 if __name__ == "__main__":
     main()
