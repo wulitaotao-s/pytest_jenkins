@@ -64,18 +64,12 @@ pipeline {
                 script {
                     env.TEST_START_TIME = new Date().format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Shanghai'))
                 }
-                // 使用 PowerShell 同时输出到控制台和文件
                 bat """
                     cd /d \"${env.WORK_ROOT}\"
-                    powershell -Command ^
-                        \"python -m pytest Test_cases -v --tb=short ^
-                            --html='${env.HTML_REPORT_FILE}' ^
-                            --self-contained-html ^
-                            2>&1 | Tee-Object -FilePath '${env.LOG_FILE}'\"
+                    powershell -Command "python -m pytest Test_cases -v --tb=short --html='${env.HTML_REPORT_FILE}' --self-contained-html 2>&1 | Tee-Object -FilePath '${env.LOG_FILE}'"
                 """
             }
         }
-    }
 
     post {
         always {
