@@ -10,7 +10,7 @@ import element_config as ec
 
 def wait_for_device_online(base_url, timeout=150):
     """等待设备重启完成，直到能访问 base_url"""
-    print(f"⏳ 等待设备重启（最多 {timeout} 秒）...")
+    print(f"等待设备重启（最多 {timeout} 秒）...")
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
