@@ -9,7 +9,7 @@ pipeline {
         RECIPIENT        = '2466065809@qq.com'
         WORK_ROOT        = "D:\\pytest_jenkins_test"
         REPORT_DIR       = "D:\\pytest_jenkins_test\\Reports"
-        // 使用 BUILD_ID 或自定义时间戳作为唯一标识
+        // 注意：TIMESTAMP 在每个 run 中只计算一次，但 post 阶段仍可访问
         TIMESTAMP        = "${new Date().format('yyyy-MM-dd_HH-mm-ss', TimeZone.getTimeZone('Asia/Shanghai'))}"
         HTML_REPORT_FILE = "D:\\pytest_jenkins_test\\Reports\\report_${TIMESTAMP}.html"
         TEST_OUTPUT_FILE = "D:\\pytest_jenkins_test\\Reports\\pytest_console_${TIMESTAMP}.log"
@@ -30,6 +30,9 @@ pipeline {
         stage('Checkout into Custom Directory') {
             steps {
                 dir(env.WORK_ROOT) {
+                    // 尝试强力清理（可选增强）
+                    bat 'taskkill /f /im python.exe 2>nul'
+                    bat 'timeout /t 2 /nobreak >nul'
                     bat 'rd /s /q . 2>nul || exit /b 0'
                     checkout scm
                 }
@@ -102,7 +105,6 @@ pipeline {
                         1>\"${env.TEST_OUTPUT_FILE}\" 2>&1
                 """
 
-                // 实时打印带 [TEST LOG] 的行（可选）
                 script {
                     if (fileExists(env.TEST_OUTPUT_FILE)) {
                         def lines = readFile(file: env.TEST_OUTPUT_FILE).split('\n')
@@ -115,46 +117,28 @@ pipeline {
                 }
             }
         }
-
-        stage('Send Email Report') {
-            when {
-                expression { currentBuild.result != 'SUCCESS' || currentBuild.result == null }
-            }
-            steps {
-                script {
-                    def result = bat returnStatus: true, script: """
-                        cd /d "${env.WORK_ROOT}"
-                        if not exist "send_email.py" (
-                            echo [WARN] send_email.py not found. Skipping email.
-                            exit /b 0
-                        )
-                        echo [INFO] Sending email report...
-                        python send_email.py
-                        exit /b 0
-                    """
-
-                    if (result == 0) {
-                        echo "[INFO] Email sent successfully."
-                    } else {
-                        echo "[ERROR] Failed to send email."
-                    }
-                }
-            }
-        }
     }
 
     post {
         always {
             script {
-                // 使用 environment 中定义的全局路径
-                def htmlFile = env.HTML_REPORT_FILE
-                def logFile  = env.TEST_OUTPUT_FILE
+                echo "[INFO] Entering post-build actions..."
 
-                if (fileExists(htmlFile)) {
-                    archiveArtifacts artifacts: htmlFile, allowEmptyArchive: true
+                // 归档报告和日志
+                if (fileExists(env.HTML_REPORT_FILE)) {
+                    archiveArtifacts artifacts: env.HTML_REPORT_FILE, allowEmptyArchive: true
                 }
-                if (fileExists(logFile)) {
-                    archiveArtifacts artifacts: logFile, allowEmptyArchive: true
+                if (fileExists(env.TEST_OUTPUT_FILE)) {
+                    archiveArtifacts artifacts: env.TEST_OUTPUT_FILE, allowEmptyArchive: true
+                }
+
+                // 发送邮件（无论成功/失败）
+                if (fileExists("${env.WORK_ROOT}/send_email.py")) {
+                    echo "[INFO] send_email.py found. Sending email report..."
+                    bat "cd /d \"${env.WORK_ROOT}\" && python send_email.py"
+                    echo "[INFO] Email sending completed."
+                } else {
+                    echo "[WARN] send_email.py not found at ${env.WORK_ROOT}. Skipping email."
                 }
             }
         }
