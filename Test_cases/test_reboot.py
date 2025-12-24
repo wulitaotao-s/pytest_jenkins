@@ -79,6 +79,7 @@ def test_device_reboot(driver):
 
     # ========== 6. 重新登录并进入 Home 页面 ==========
     print("设备已恢复，重新登录...")
+    time.sleep(20)
     login(driver)
     driver.get(ec.home)
     time.sleep(3)
@@ -124,10 +125,6 @@ def test_device_reboot(driver):
         body_text = driver.find_element(By.TAG_NAME, "body").text[:500]
         print(f"页面前500字符: {body_text}")
         assert False, "无法验证 Online Time"
-
-
-
-
 
 # ========== 主程序（可选，用于独立运行） ==========
 if __name__ == "__main__":
