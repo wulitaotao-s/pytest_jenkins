@@ -27,6 +27,7 @@ def test_wifi_init_status(driver):
     ssid_24g = ct.wait_for_non_empty_value(driver, ec.wlan_SSID)
     password_24g = ct.wait_for_non_empty_value(driver, ec.wlan_Password)
     print(f"2.4G Wi-Fi 配置: SSID={ssid_24g}, Password={password_24g}")
+    ct.save_screenshot_and_log(driver)
     success_24g = ct.connect_and_test_wifi(ssid_24g, password_24g)
     assert success_24g, f"2.4G Wi-Fi 连接或网络测试失败 (SSID: {ssid_24g})"
 
@@ -35,6 +36,7 @@ def test_wifi_init_status(driver):
     ssid_5g = ct.wait_for_non_empty_value(driver, ec.wlan11ac_SSID)
     password_5g = ct.wait_for_non_empty_value(driver, ec.wlan11ac_Password)
     print(f"5G Wi-Fi 配置: SSID={ssid_5g}, Password={password_5g}")
+    ct.save_screenshot_and_log(driver)
     success_5g = ct.connect_and_test_wifi(ssid_5g, password_5g)
     assert success_5g, f"5G Wi-Fi 连接或网络测试失败 (SSID: {ssid_5g})"
 

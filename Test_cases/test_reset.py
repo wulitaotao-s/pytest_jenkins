@@ -49,6 +49,7 @@ def test_factory_reset_restores_default_wifi(driver):
 
     confirm_reset_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.Device_confirmReset)))
     confirm_reset_btn.click()
+    ct.save_screenshot_and_log(driver)
     print("已确认 Reset，设备将重启...")
 
     # ========== 5. 等待设备重启并重新上线 ==========
@@ -69,11 +70,13 @@ def test_factory_reset_restores_default_wifi(driver):
     driver.get(ec.Basic_wifi_24G)
     ssid_24g_after = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.wlan_SSID))).get_attribute("value").strip()
     password_24g_after = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.wlan_Password))).get_attribute("value").strip()
+    ct.save_screenshot_and_log(driver)
 
     # 检查 5G
     driver.get(ec.Basic_wifi_5G)
     ssid_5g_after = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.wlan11ac_SSID))).get_attribute("value").strip()
     password_5g_after = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.wlan11ac_Password))).get_attribute("value").strip()
+    ct.save_screenshot_and_log(driver)
 
     print("\n【Reset 后实际配置】")
     print(f"2.4G SSID: '{ssid_24g_after}'")

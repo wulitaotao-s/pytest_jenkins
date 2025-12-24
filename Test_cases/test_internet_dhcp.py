@@ -3,7 +3,7 @@ import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value,restart_test_nic_and_ping
+from conftest import login, safe_set_input_value,restart_test_nic_and_ping, save_screenshot_and_log
 import element_config as ec
 
 
@@ -72,6 +72,7 @@ def test_wan_dhcp_ping_jd(driver):
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_commit)))
     save_btn.click()
     time.sleep(10)  # 等待应用生效
+    save_screenshot_and_log(driver)
 
     # ========== 4. 执行 Ping 测试 ==========
     print("跳转到系统测试页面")
@@ -101,7 +102,7 @@ def test_wan_dhcp_ping_jd(driver):
     # ========== 5. 检查结果：通过 page_source 全文搜索 ==========
     print("检查 Ping 结果...")
     page_source = driver.page_source
-
+    save_screenshot_and_log(driver)
     # 匹配模式：64 bytes from [任意IP]: icmp_seq=... time=...
     pattern = r'64 bytes from \d+\.\d+\.\d+\.\d+: icmp_seq=\d+ ttl=\d+ time=\d+\.\d+ ms'
 

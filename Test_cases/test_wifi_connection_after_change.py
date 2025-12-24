@@ -33,6 +33,7 @@ def test_wifi_connection_after_change(driver):
     # 安全设置 SSID 和密码
     ct.safe_set_input_value(driver, ec.wlan_SSID, ssid_24g_new)
     ct.safe_set_input_value(driver, ec.wlan_Password, password_new)
+    ct.save_screenshot_and_log(driver)
 
     # 点击保存按钮
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wlan_commit)))
@@ -50,6 +51,7 @@ def test_wifi_connection_after_change(driver):
     # 安全设置 SSID 和密码
     ct.safe_set_input_value(driver, ec.wlan11ac_SSID, ssid_5g_new)
     ct.safe_set_input_value(driver, ec.wlan11ac_Password, password_new)
+    ct.save_screenshot_and_log(driver)
 
     # 点击保存按钮
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wlan11ac_commit)))

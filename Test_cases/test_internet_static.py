@@ -3,7 +3,7 @@ import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value, restart_test_nic_and_ping
+from conftest import login, safe_set_input_value, restart_test_nic_and_ping, save_screenshot_and_log
 import element_config as ec
 
 
@@ -88,6 +88,7 @@ def test_wan_static_ping_jd(driver):
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_commit)))
     save_btn.click()
     time.sleep(10)  # 等待静态 IP 生效
+    save_screenshot_and_log(driver)
 
     # ========== 4. 执行 Ping 测试 ==========
     print("跳转到系统测试页面")
@@ -112,6 +113,7 @@ def test_wan_static_ping_jd(driver):
     start_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Start)))
     start_btn.click()
     time.sleep(20)  # 等待 Ping 完成
+    save_screenshot_and_log(driver)
 
     # ========== 5. 检查结果：通过 page_source 全文搜索 ==========
     print("检查 Ping 结果...")

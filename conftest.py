@@ -6,13 +6,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import element_config as ec
 from selenium.webdriver.chrome.options import Options
-import sys
-import subprocess
-import tempfile
-import os
-import re
-import time
-import requests
+import sys, datetime, subprocess, tempfile, os, re, time, requests, inspect
+from datetime import datetime
+from threading import Lock
+
+
+# 全局状态（模块级）
+_ROOT_DIR = None
+_CURRENT_SCRIPT_SUBDIR = None
+_LOCK = Lock()
+
+
 
 @pytest.fixture(scope="function")
 def driver():
@@ -192,7 +196,7 @@ def restart_test_nic_and_ping() -> bool:
         if not disabled:
             print("  (网卡可能已禁用)")
     except Exception as e:
-        print(f"⚠️ 禁用失败: {e}")
+        print(f"禁用失败: {e}")
         return False
     time.sleep(2)
 
@@ -600,3 +604,57 @@ def handle_guide_wizard(driver):
         print(f"点击 Complete Setting 失败: {e}")
         # 可能已经自动跳转了，不报错
     time.sleep(10)
+
+
+def save_screenshot_and_log(driver, name="screenshot"):
+    """
+    智能截图函数（无图标版）：
+    - 首次调用：创建带时间戳的根目录
+    - 自动按调用脚本名创建子目录（如 test_login.py -> test-login）
+    - 同一脚本多次调用：复用子目录，文件名自动编号避免覆盖
+    """
+    global _ROOT_DIR, _CURRENT_SCRIPT_SUBDIR
+
+    with _LOCK:
+        # 1. 创建根目录（仅首次）
+        if _ROOT_DIR is None:
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            _ROOT_DIR = rf"D:\pytest_jenkins_test@tmp\photo_{timestamp}"
+            os.makedirs(_ROOT_DIR, exist_ok=True)
+            print(f"创建截图根目录: {_ROOT_DIR}")
+
+        # 2. 获取调用者脚本名
+        frame = inspect.currentframe()
+        try:
+            caller_frame = frame.f_back
+            if caller_frame is None:
+                script_name = "unknown"
+            else:
+                caller_file = caller_frame.f_code.co_filename
+                script_basename = os.path.basename(caller_file)
+                script_name = script_basename.replace(".py", "").replace("_", "-").replace(".", "-")
+        finally:
+            del frame
+
+        # 3. 创建或复用子目录
+        expected_subdir = os.path.join(_ROOT_DIR, script_name)
+        if _CURRENT_SCRIPT_SUBDIR != expected_subdir:
+            os.makedirs(expected_subdir, exist_ok=True)
+            _CURRENT_SCRIPT_SUBDIR = expected_subdir
+            print(f"切换到脚本目录: {script_name}")
+
+        # 4. 生成唯一截图文件名（自动编号）
+        count = 0
+        while True:
+            filename = f"{name}_{count:02d}.png"
+            filepath = os.path.join(_CURRENT_SCRIPT_SUBDIR, filename)
+            if not os.path.exists(filepath):
+                break
+            count += 1
+
+        # 5. 执行截图
+        try:
+            driver.save_screenshot(filepath)
+            print(f"截图已保存: {filepath}")
+        except Exception as e:
+            print(f"截图失败: {e}")

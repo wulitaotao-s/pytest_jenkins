@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, wait_for_device_online
+from conftest import login, wait_for_device_online, save_screenshot_and_log
 import element_config as ec
 
 
@@ -51,6 +51,7 @@ def test_device_reboot(driver):
     print("点击确认重启")
     confirm_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.Device_confirmReboot)))
     confirm_btn.click()
+    save_screenshot_and_log(driver)
 
     # ========== 5. 等待设备重启 ==========
     print("等待设备重启...")
@@ -63,6 +64,7 @@ def test_device_reboot(driver):
     login(driver)
     driver.get(ec.home)
     time.sleep(3)
+    save_screenshot_and_log(driver)
 
     # ========== 7. 获取 Online Time 并验证 ==========
     print("获取 Online Time...")

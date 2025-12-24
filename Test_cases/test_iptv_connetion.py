@@ -2,7 +2,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value
+from conftest import login, safe_set_input_value, save_screenshot_and_log
 import element_config as ec
 import re
 
@@ -72,6 +72,7 @@ def test_wan_iptv_ping_diagnosis(driver):
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_commit)))
     save_btn.click()
     time.sleep(3)
+    save_screenshot_and_log(driver)
 
     # ========== 4. 配置 IPTV ==========
     print("跳转到 IPTV 配置页面")
@@ -112,6 +113,7 @@ def test_wan_iptv_ping_diagnosis(driver):
 
     # 等待 Ping 完成（最多 10 秒）
     wait = WebDriverWait(driver, 10)
+    save_screenshot_and_log(driver)
     ping_logs_elem = wait.until(EC.presence_of_element_located((By.ID, "pingLogs")))
 
     # 获取整个页面源码

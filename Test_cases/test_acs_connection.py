@@ -2,7 +2,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value
+from conftest import login, safe_set_input_value, save_screenshot_and_log
 import element_config as ec
 import re
 
@@ -119,10 +119,13 @@ def test_acs_connection(driver):
 
     page_text = driver.find_element(By.TAG_NAME, "body").text
     connected = "Connected" in page_text
+    save_screenshot_and_log(driver)
     if connected:
         print("TR069 WAN 已成功连接")
+
     else:
         print("TR069 WAN 未连接")
+
 
     # ========== 6. 验证 CWMP 上报状态 ==========
     print("跳转到首页并进入 CWMP Information 页面")
@@ -143,10 +146,12 @@ def test_acs_connection(driver):
     # 检查页面是否包含 "Reported successfully"
     print("检查是否显示 'Reported successfully'")
     body_text = driver.find_element(By.TAG_NAME, "body").text
+    save_screenshot_and_log(driver)
     if "Reported successfully" in body_text:
         print("CWMP 已上报成功")
     else:
         print("未检测到 'Reported successfully' 文本")
+        assert False, "CWMP 上报失败：页面中未找到 'Reported successfully'"
 
     # ========== 7. Ping 测试 ==========
     print("执行 Ping 测试")
@@ -180,7 +185,7 @@ def test_acs_connection(driver):
     # 目标 IP 和匹配模式
     target_ip = "192.168.140.1"
     pattern = rf'64 bytes from {target_ip}: icmp_seq=\d+ ttl=\d+ time=\d+\.\d+ ms'
-
+    save_screenshot_and_log(driver)
     # 搜索是否包含成功响应
     if re.search(pattern, page_source):
         print("Ping 测试通过")

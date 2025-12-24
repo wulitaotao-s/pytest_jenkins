@@ -2,7 +2,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value
+from conftest import login, safe_set_input_value, save_screenshot_and_log
 import element_config as ec
 import re
 
@@ -135,6 +135,7 @@ def test_voip_connection(driver):
     voip_save = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.voip_commit)))
     voip_save.click()
     time.sleep(20)  # 等待注册尝试完成
+    save_screenshot_and_log(driver)
 
     # ========== 5. 验证 VoIP 注册状态 ==========
     print("检查 VoIP 注册状态")
@@ -164,6 +165,7 @@ def test_voip_connection(driver):
     # 检查页面是否包含 "Registered"
     print("检查是否显示 'Registered'")
     body_text = driver.find_element(By.TAG_NAME, "body").text
+    save_screenshot_and_log(driver)
     if "Registered" in body_text:
         print("语音注册成功")
     else:
@@ -195,6 +197,7 @@ def test_voip_connection(driver):
     # 等待 Ping 完成（最多 10 秒）
     wait = WebDriverWait(driver, 10)
     ping_logs_elem = wait.until(EC.presence_of_element_located((By.ID, "pingLogs")))
+    save_screenshot_and_log(driver)
 
     # 获取整个页面源码
     page_source = driver.page_source
