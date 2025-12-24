@@ -11,11 +11,11 @@ from datetime import datetime
 from threading import Lock
 
 
-# 全局状态（模块级）
-_ROOT_DIR = None
-_CURRENT_SCRIPT_SUBDIR = None
+# 全局状态
+_ROOT_DIR = None          # 例如: D:\...\photo_2025-10-01
+_CREATED_SCRIPT_DIRS = set()  # 已创建的脚本子目录名集合
 _LOCK = Lock()
-
+BASE_PARENT = r"D:\pytest_jenkins_test@tmp"
 
 
 @pytest.fixture(scope="function")
@@ -608,20 +608,20 @@ def handle_guide_wizard(driver):
 
 def save_screenshot_and_log(driver, name="screenshot"):
     """
-    智能截图函数（无图标版）：
-    - 首次调用：创建带时间戳的根目录
-    - 自动按调用脚本名创建子目录（如 test_login.py -> test-login）
-    - 同一脚本多次调用：复用子目录，文件名自动编号避免覆盖
+    截图函数：
+    - 根目录：D:\pytest_jenkins_test@tmp\photo_YYYY-MM-DD（按天）
+    - 子目录：按调用脚本名（如 test_login.py → test-login）
+    - 同一脚本多次调用：文件名自动编号（screenshot_00.png, _01.png...）
     """
-    global _ROOT_DIR, _CURRENT_SCRIPT_SUBDIR
+    global _ROOT_DIR, _CREATED_SCRIPT_DIRS
 
     with _LOCK:
-        # 1. 创建根目录（仅首次）
+        # 1. 创建或复用当天的根目录（仅日期）
         if _ROOT_DIR is None:
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            _ROOT_DIR = rf"D:\pytest_jenkins_test@tmp\photo_{timestamp}"
+            today = datetime.now().strftime("%Y-%m-%d")
+            _ROOT_DIR = os.path.join(BASE_PARENT, f"photo_{today}")
             os.makedirs(_ROOT_DIR, exist_ok=True)
-            print(f"创建截图根目录: {_ROOT_DIR}")
+            print(f"使用截图根目录: {_ROOT_DIR}")
 
         # 2. 获取调用者脚本名
         frame = inspect.currentframe()
@@ -636,23 +636,25 @@ def save_screenshot_and_log(driver, name="screenshot"):
         finally:
             del frame
 
-        # 3. 创建或复用子目录
-        expected_subdir = os.path.join(_ROOT_DIR, script_name)
-        if _CURRENT_SCRIPT_SUBDIR != expected_subdir:
-            os.makedirs(expected_subdir, exist_ok=True)
-            _CURRENT_SCRIPT_SUBDIR = expected_subdir
-            print(f"切换到脚本目录: {script_name}")
+        # 3. 构建子目录路径
+        subdir_path = os.path.join(_ROOT_DIR, script_name)
 
-        # 4. 生成唯一截图文件名（自动编号）
+        # 4. 如果该脚本子目录未创建，则创建
+        if script_name not in _CREATED_SCRIPT_DIRS:
+            os.makedirs(subdir_path, exist_ok=True)
+            _CREATED_SCRIPT_DIRS.add(script_name)
+            print(f"创建脚本子目录: {subdir_path}")
+
+        # 5. 生成唯一文件名（自动编号）
         count = 0
         while True:
             filename = f"{name}_{count:02d}.png"
-            filepath = os.path.join(_CURRENT_SCRIPT_SUBDIR, filename)
+            filepath = os.path.join(subdir_path, filename)
             if not os.path.exists(filepath):
                 break
             count += 1
 
-        # 5. 执行截图
+        # 6. 执行截图
         try:
             driver.save_screenshot(filepath)
             print(f"截图已保存: {filepath}")
