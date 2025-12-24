@@ -20,13 +20,14 @@ BASE_PARENT = r"D:\pytest_jenkins_test@tmp"
 
 @pytest.fixture(scope="function")
 def driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    d = webdriver.Chrome(options=chrome_options)
+    # chrome_options = Options()
+    # chrome_options.add_argument("--headless=new")
+    # chrome_options.add_argument("--no-sandbox")
+    # chrome_options.add_argument("--disable-dev-shm-usage")
+    # chrome_options.add_argument("--disable-gpu")
+    # chrome_options.add_argument("--window-size=1920,1080")
+    # d = webdriver.Chrome(options=chrome_options)
+    d = webdriver.Chrome()
     yield d
     d.quit()
 
@@ -82,7 +83,6 @@ def login(driver):
     except:
         # 没有向导，说明直接进了首页
         print("→ 未检测到向导界面，等待首页加载...")
-
     # 等待首页加载
     print("登录成功，进入首页")
 
@@ -327,7 +327,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
             shell=True,
             capture_output=True,
             text=True,
-            encoding='gbk',  # ← 关键
+            encoding='gbk',
             timeout=30
         )
         if connect_result.returncode != 0:
@@ -381,7 +381,6 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
 
                 # 健壮判断：必须有 TTL= 且无“请求超时”或“无法访问”
                 if ('TTL=' in ping_output and
-                    '请求超时' not in ping_output and
                     '无法访问' not in ping_output and
                     'Destination host unreachable' not in ping_output):
                     test_passed = True
@@ -571,13 +570,6 @@ def handle_guide_wizard(driver):
         print("已跳过密码设置")
     except Exception as e:
         print(f"跳过密码设置失败: {e}")
-        # 如果没有 Skip 按钮，尝试 Next
-        try:
-            next_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_next)))
-            next_btn.click()
-            print("使用 Next 跳过密码设置")
-        except:
-            print("无法跳过密码设置，继续尝试下一步")
 
     # ========== 第二步：Wi-Fi 设置页 -> 点击 Skip ==========
     try:
@@ -588,12 +580,7 @@ def handle_guide_wizard(driver):
     except Exception as e:
         print(f"跳过 Wi-Fi 设置失败: {e}")
         # 尝试使用 Next
-        try:
-            next_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_next)))
-            next_btn.click()
-            print("使用 Next 跳过 Wi-Fi 设置")
-        except:
-            print("无法跳过 Wi-Fi 设置")
+
 
     # ========== 第三步：完成设置页 -> 点击 Complete Setting ==========
     try:
@@ -602,8 +589,7 @@ def handle_guide_wizard(driver):
         print("已完成设置，进入主界面")
     except Exception as e:
         print(f"点击 Complete Setting 失败: {e}")
-        # 可能已经自动跳转了，不报错
-    time.sleep(10)
+    time.sleep(5)
 
 
 def save_screenshot_and_log(driver, name="screenshot"):

@@ -7,7 +7,7 @@ import conftest as ct
 import element_config as ec
 
 
-def test_factory_reset_restores_default_wifi(driver):
+def test_reset(driver):
     # ========== 1. 登录 ==========
     ct.login(driver)
 
@@ -60,8 +60,6 @@ def test_factory_reset_restores_default_wifi(driver):
     # ========== 6. 重新登录（此时可能进入向导界面）==========
     print("\n[步骤6] 重新登录设备...")
     ct.login(driver)
-    print(f"登录成功，进入向导界面")
-    ct.handle_guide_wizard(driver)  # 跳过向导流程
 
     # ========== 7. 检查 Wi-Fi 配置是否恢复默认 ==========
     print("\n[步骤7] 检查 Reset 后的 Wi-Fi 配置...")

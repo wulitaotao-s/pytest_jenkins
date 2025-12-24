@@ -7,7 +7,7 @@ from conftest import login, safe_set_input_value,restart_test_nic_and_ping, save
 import element_config as ec
 
 
-def test_wan_dhcp_ping_jd(driver):
+def test_wan_dhcp(driver):
     """测试 WAN DHCP 模式 + Ping www.jd.com 连通性"""
 
     # ========== 1. 登录 ==========

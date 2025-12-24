@@ -33,7 +33,7 @@ def parse_online_time(online_time_str):
     return total_seconds
 
 
-def test_device_reboot(driver):
+def test_reboot(driver):
     # ========== 1. 登录 ==========
     login(driver)
 
@@ -60,8 +60,6 @@ def test_device_reboot(driver):
 
     # ========== 6. 重新登录并进入 Home 页面 ==========
     print("设备已恢复，重新登录...")
-    time.sleep(20)
-    login(driver)
     driver.get(ec.home)
     time.sleep(3)
     save_screenshot_and_log(driver)

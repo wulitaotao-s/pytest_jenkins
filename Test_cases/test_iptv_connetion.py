@@ -7,7 +7,7 @@ import element_config as ec
 import re
 
 
-def test_wan_iptv_ping_diagnosis(driver):
+def test_wan_iptv(driver):
     """测试 WAN + IPTV 配置及 Ping 诊断：设置 WAN VLAN=200, IPTV Multicast VLAN=3030，执行 Ping 测试"""
 
     # ========== 1. 登录 ==========

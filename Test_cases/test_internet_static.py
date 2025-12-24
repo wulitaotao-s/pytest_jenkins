@@ -7,7 +7,7 @@ from conftest import login, safe_set_input_value, restart_test_nic_and_ping, sav
 import element_config as ec
 
 
-def test_wan_static_ping_jd(driver):
+def test_wan_static(driver):
     """测试 WAN Static 模式 + Ping www.jd.com 连通性"""
 
     # ========== 1. 登录 ==========
