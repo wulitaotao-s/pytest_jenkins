@@ -16,14 +16,14 @@ import requests
 
 @pytest.fixture(scope="function")
 def driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    d = webdriver.Chrome(options=chrome_options)
-    # d = webdriver.Chrome()
+    # chrome_options = Options()
+    # chrome_options.add_argument("--headless=new")
+    # chrome_options.add_argument("--no-sandbox")
+    # chrome_options.add_argument("--disable-dev-shm-usage")
+    # chrome_options.add_argument("--disable-gpu")
+    # chrome_options.add_argument("--window-size=1920,1080")
+    # d = webdriver.Chrome(options=chrome_options)
+    d = webdriver.Chrome()
     yield d
     d.quit()
 
@@ -57,6 +57,7 @@ def login(driver):
         print("→ 已点击 English，等待 2 秒后重启浏览器以确保干净环境...")
         time.sleep(2)
     driver.get(ec.url_base)
+
     # ========== 2. 登录 ==========
     username = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_username_field)))
     password = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_password_field)))
@@ -65,6 +66,19 @@ def login(driver):
     username.send_keys(ec.login_username)
     password.send_keys(ec.login_password)
     button.click()
+
+    # ========== 3. 尝试检测是否在向导界面（通过是否存在 guide_skip 按钮） ==========
+    try:
+        # 等待最多 5 秒看是否有向导的 Skip 按钮
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ec.guide_skip))
+        )
+        print("→ 检测到向导界面，正在自动跳过设置...")
+        handle_guide_wizard(driver)
+        print("向导处理完成，已进入主界面")
+    except:
+        # 没有向导，说明直接进了首页
+        print("→ 未检测到向导界面，等待首页加载...")
 
     # 等待首页加载
     print("登录成功，进入首页")
