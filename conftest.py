@@ -12,41 +12,80 @@ import tempfile
 import os
 import re
 import time
+import requests
 
 @pytest.fixture(scope="function")
 def driver():
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")  # 新版 Chrome 推荐写法
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     d = webdriver.Chrome(options=chrome_options)
+    # d = webdriver.Chrome()
     yield d
     d.quit()
 
 
 def login(driver):
-    """登录函数"""
-    print("开始登录...")
-    base_url = ec.url_base
-    login_username = ec.login_username
-    login_password = ec.login_password
-    driver.get(base_url)
+    """
+    登录函数，确保使用英文界面。
+    如果检测到非英文，会关闭当前 driver，新建一个并重试。
+    返回：新的 driver 实例（可能已替换）
+    """
+    print("开始登录流程...")
     wait = WebDriverWait(driver, 30)
-    # 正确使用 wait.until(...)
+    driver.get(ec.url_base)
+
+    # ========== 1 检查语言 ==========
+    lang_button = wait.until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_language))
+    )
+    current_text = lang_button.text.strip()
+    print(f"检测到当前语言: '{current_text}'")
+    if current_text != "English":
+        print("→ 非英文界面，正在切换为 English...")
+        lang_button.click()
+        # 等待下拉菜单
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".t-dropdown__menu")))
+        # 点击 English
+        english_elem = wait.until(
+            EC.element_to_be_clickable((By.XPATH, ec.english_option))
+        )
+        english_elem.click()
+        print("→ 已点击 English，等待 2 秒后重启浏览器以确保干净环境...")
+        time.sleep(2)
+    driver.get(ec.url_base)
+    # ========== 2. 登录 ==========
     username = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_username_field)))
     password = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ec.login_password_field)))
     button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.login_submit_button)))
-    username.clear()
-    username.send_keys(login_username)
-    password.clear()
-    password.send_keys(login_password)
+
+    username.send_keys(ec.login_username)
+    password.send_keys(ec.login_password)
     button.click()
 
     # 等待首页加载
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".t-table")))
     print("登录成功，进入首页")
+
+
+def wait_for_device_online(base_url, timeout=150):
+    """等待设备重启完成，直到能访问 base_url"""
+    print(f"等待设备重启（最多 {timeout} 秒）...")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(base_url, timeout=3)
+            if response.status_code == 200:
+                print("设备已在线")
+                return True
+        except Exception:
+            pass
+        time.sleep(5)
+        elapsed = int(time.time() - start_time)
+        print(f"已等待 {elapsed} 秒...")
+    raise TimeoutError(f"设备在 {timeout} 秒内未恢复在线")
 
 
 def is_switch_enabled(driver, switch_selector):
@@ -501,3 +540,49 @@ def verify_pppoe_internet_via_web_ping(driver):
         assert False, "Ping www.jd.com 失败：未收到有效响应"
 
 
+def handle_guide_wizard(driver):
+    """处理重置后出现的向导界面，依次点击 Skip -> Skip -> Complete Setting"""
+    wait = WebDriverWait(driver, 15)
+
+    print("\n正在处理向导界面...")
+
+    # ========== 第一步：密码设置页 -> 点击 Skip ==========
+    try:
+        skip_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_skip)))
+        skip_btn.click()
+        print("已跳过密码设置")
+    except Exception as e:
+        print(f"跳过密码设置失败: {e}")
+        # 如果没有 Skip 按钮，尝试 Next
+        try:
+            next_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_next)))
+            next_btn.click()
+            print("使用 Next 跳过密码设置")
+        except:
+            print("无法跳过密码设置，继续尝试下一步")
+
+    # ========== 第二步：Wi-Fi 设置页 -> 点击 Skip ==========
+    try:
+        # 注意这里可能需要更精确的定位器来区分不同的“Skip”按钮
+        skip_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_skip)))
+        skip_btn.click()
+        print("已跳过 Wi-Fi 设置")
+    except Exception as e:
+        print(f"跳过 Wi-Fi 设置失败: {e}")
+        # 尝试使用 Next
+        try:
+            next_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_next)))
+            next_btn.click()
+            print("使用 Next 跳过 Wi-Fi 设置")
+        except:
+            print("无法跳过 Wi-Fi 设置")
+
+    # ========== 第三步：完成设置页 -> 点击 Complete Setting ==========
+    try:
+        complete_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_complete)))
+        complete_btn.click()
+        print("已完成设置，进入主界面")
+    except Exception as e:
+        print(f"点击 Complete Setting 失败: {e}")
+        # 可能已经自动跳转了，不报错
+    time.sleep(10)

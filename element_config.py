@@ -1,23 +1,22 @@
-url_base = "http://192.168.10.1/"
+url_base = "http://192.168.1.1/"
+login_username = "admin"
+login_password = "admin"
+
+## login_language
+login_language = ".header-user-account"
+english_option = "//span[@class='t-dropdown__item-text' and text()='English']"    #xpath
 
 # css定位参数化
 # 登录界面
 login_username_field = 'input[placeholder="Please Enter Your Username"]'
 login_password_field = 'input[placeholder="Please Enter Your Password"]'
 login_submit_button = "#login"
-login_username = "admin"
-login_password = "admin"
-## login_language
-login_language = "button.header-user-btn"
-language_choose_first = "div.t-dropdown__menu span:nth-child(1)"
-language_choose_sencond = "div.t-dropdown__menu span:nth-child(2)"
-language_choose_third = "div.t-dropdown__menu span:nth-child(3)"
-language_choose_fourth = "div.t-dropdown__menu span:nth-child(4)"
-
 ## 向导界面
 ### 密码设置
+
 guide_newpassword = "#loginPasswd input"
 guide_Confirm_Password = "#confirmPassword input"
+
 ### wifi设置
 guide_wlan_enable = "#wlanEnable"
 guide_wlan_ssid = "#wlanCurrentSsidName input"
@@ -29,6 +28,7 @@ guide_wlan11ac_password = "#wlan11acPassword input"
 guide_next = "#next"
 guide_skip = "#skip"
 guide_previous = "#previous"
+guide_complete = "button#completedSetting"
 
 #logout
 logout = "#logout"

@@ -1,30 +1,11 @@
 import time
-import requests
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login
+from conftest import login, wait_for_device_online
 import element_config as ec
-
-
-def wait_for_device_online(base_url, timeout=150):
-    """等待设备重启完成，直到能访问 base_url"""
-    print(f"等待设备重启（最多 {timeout} 秒）...")
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        try:
-            # 尝试发起 HTTP 请求（不加载完整页面，更快）
-            response = requests.get(ec.url_base, timeout=3)
-            if response.status_code == 200:
-                print("设备已在线，开始登录...")
-                return True
-        except Exception:
-            pass
-        time.sleep(5)
-        elapsed = int(time.time() - start_time)
-        print(f"已等待 {elapsed} 秒...")
-    raise TimeoutError(f"设备在 {timeout} 秒内未恢复在线")
 
 
 def parse_online_time(online_time_str):
@@ -49,7 +30,6 @@ def parse_online_time(online_time_str):
         s_part = online_time_str.split('s')[0].strip()
         if s_part.isdigit():
             total_seconds += int(s_part)
-
     return total_seconds
 
 
@@ -74,7 +54,7 @@ def test_device_reboot(driver):
 
     # ========== 5. 等待设备重启 ==========
     print("等待设备重启...")
-    time.sleep(30)  # 给设备一点关机时间
+    time.sleep(60)  # 给设备一点关机时间
     wait_for_device_online(ec.url_base, timeout=150)
 
     # ========== 6. 重新登录并进入 Home 页面 ==========
@@ -86,7 +66,6 @@ def test_device_reboot(driver):
 
     # ========== 7. 获取 Online Time 并验证 ==========
     print("获取 Online Time...")
-
     try:
         # 使用 XPath 精准定位 "Online Time" 行
         online_time_row = wait.until(
@@ -126,10 +105,3 @@ def test_device_reboot(driver):
         print(f"页面前500字符: {body_text}")
         assert False, "无法验证 Online Time"
 
-# ========== 主程序（可选，用于独立运行） ==========
-if __name__ == "__main__":
-    driver = webdriver.Chrome()
-    try:
-        test_device_reboot(driver)
-    finally:
-        driver.quit()
