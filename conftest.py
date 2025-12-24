@@ -27,7 +27,6 @@ def driver():
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     d = webdriver.Chrome(options=chrome_options)
-    # d = webdriver.Chrome()
     yield d
     d.quit()
 
@@ -86,6 +85,7 @@ def login(driver):
 
     # 等待首页加载
     print("登录成功，进入首页")
+
 
 
 def wait_for_device_online(base_url, timeout=150):
@@ -366,7 +366,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
 
         # 执行 Ping 测试（使用 gbk 编码）
         if ip_address:
-            ping_cmd = f'ping -n 3 -S {ip_address} 8.8.8.8'
+            ping_cmd = f'ping -n 3 -S {ip_address} www.jd.com'
             print(f"[INFO] 执行 Ping: {ping_cmd}")
             try:
                 result = subprocess.run(
