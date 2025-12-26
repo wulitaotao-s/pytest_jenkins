@@ -16,7 +16,6 @@ def test_wifi_connection_after_change(driver):
       4. 进入 5G Wi-Fi 页面，修改 SSID=test_@@##_5G，密码=@@##!!12qw，保存
       5. 使用新配置连接 5G Wi-Fi 并验证网络
     """
-
     # ========== 前置：确认 PPPoE + 互联网连通性 ==========
     ct.verify_pppoe_internet_via_web_ping(driver)
 
@@ -25,7 +24,7 @@ def test_wifi_connection_after_change(driver):
     password_new = "12345678"
     ssid_5g_new = "test-change-5G"
 
-    # ========== 修改并测试 2.4G Wi-Fi ==========
+    # # ========== 修改并测试 2.4G Wi-Fi ==========
     print("修改 2.4G Wi-Fi 配置...")
     driver.get(ec.Basic_wifi_24G)
     wait = WebDriverWait(driver, 15)
@@ -39,7 +38,7 @@ def test_wifi_connection_after_change(driver):
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wlan_commit)))
     save_btn.click()
     print("已保存 2.4G Wi-Fi 配置，等待生效...")
-    time.sleep(120)
+    time.sleep(60)
 
     success_24g = ct.connect_and_test_wifi(ssid_24g_new, password_new)
     assert success_24g, f"2.4G Wi-Fi 连接或网络测试失败 (SSID: {ssid_24g_new})"
@@ -57,9 +56,8 @@ def test_wifi_connection_after_change(driver):
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wlan11ac_commit)))
     save_btn.click()
     print("已保存 5G Wi-Fi 配置，等待生效...")
-    time.sleep(120)
+    time.sleep(90)
 
     success_5g = ct.connect_and_test_wifi(ssid_5g_new, password_new)
     assert success_5g, f"5G Wi-Fi 连接或网络测试失败 (SSID: {ssid_5g_new})"
-
     print("2.4G 和 5G Wi-Fi 修改后均验证通过")

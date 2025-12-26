@@ -264,7 +264,7 @@ def restart_test_nic_and_ping() -> bool:
 
 
 def connect_and_test_wifi(ssid: str, password: str) -> bool:
-    """直接连接指定 Wi-Fi 并测试网络连通性（无扫描，适配中文 Windows）"""
+    """直接连接指定 Wi-Fi 并测试网络连通性（含无线网卡重启，适配中文 Windows）"""
     profile_name = f"__TEMP_{ssid}"
     tmp_path = None
     ip_address = None
@@ -274,11 +274,46 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
     try:
         print(f"[INFO] 跳过扫描，直接尝试连接 Wi-Fi: '{ssid}'")
 
-        # 断开当前连接
+        # === 步骤1：断开当前连接 ===
         print("[INFO] 断开当前 Wi-Fi 连接...")
         subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        # 创建临时配置文件（WPA2-PSK + AES）
+        # === 步骤2：获取无线网卡名称并重启（关键新增）===
+        wifi_interface = None
+        try:
+            output = subprocess.check_output('netsh interface show interface', shell=True, text=True, encoding='gbk')
+            lines = output.splitlines()
+            for line in lines:
+                if '已启用' in line or 'Enabled' in line:
+                    parts = [p.strip() for p in line.split() if p]
+                    # 常见关键词匹配（中英文）
+                    if any(kw in line for kw in ['Wi-Fi', 'WLAN', '无线', 'Wireless']):
+                        # 最后一个字段通常是接口名（可能含空格）
+                        # 示例: "已启用     已连接     Wi-Fi"
+                        # 我们反向找：从行尾开始，跳过状态列
+                        fields = line.strip().split()
+                        if len(fields) >= 3:
+                            name = ' '.join(fields[2:])  # 取第3个及之后作为名称
+                            wifi_interface = name
+                            break
+        except Exception as e:
+            print(f"[WARN] 无法获取无线网卡名称，跳过重启: {e}")
+
+        if wifi_interface:
+            print(f"[INFO] 检测到无线网卡: '{wifi_interface}'，正在重启...")
+            # 禁用
+            disable_cmd = f'netsh interface set interface name="{wifi_interface}" admin=disabled'
+            subprocess.run(disable_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(2)
+            # 启用
+            enable_cmd = f'netsh interface set interface name="{wifi_interface}" admin=enabled'
+            subprocess.run(enable_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(3)  # 给驱动加载时间
+            print("[INFO] 无线网卡已重启")
+        else:
+            print("[WARN] 未识别到无线网卡，跳过重启步骤")
+
+        # === 步骤3：创建并添加临时配置文件 ===
         xml_content = f'''<?xml version="1.0"?>
 <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
     <name>{profile_name}</name>
@@ -306,20 +341,19 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
             f.write(xml_content)
             tmp_path = f.name
 
-        # 添加配置（使用 gbk 编码）
         print("[INFO] 添加临时 Wi-Fi 配置文件...")
         add_result = subprocess.run(
             f'netsh wlan add profile filename="{tmp_path}"',
             shell=True,
             capture_output=True,
             text=True,
-            encoding='gbk'  # ← 关键：中文系统必须用 gbk
+            encoding='gbk'
         )
         if add_result.returncode != 0:
             print(f"[ERROR] 添加 Wi-Fi 配置失败:\n{add_result.stderr}")
             return False
 
-        # 发起连接（使用 gbk 编码）
+        # === 步骤4：发起连接 ===
         print("[INFO] 发起 Wi-Fi 连接...")
         connect_result = subprocess.run(
             f'netsh wlan connect name="{profile_name}"',
@@ -333,11 +367,11 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
             print(f"[ERROR] Wi-Fi 连接命令失败:\n{connect_result.stderr}")
             return False
 
-        # 等待获取有效 IPv4 地址（最多 20 秒）
+        # === 步骤5：等待获取有效 IP ===
         print("[INFO] 等待获取有效 IPv4 地址（最多 20 秒）...")
         for _ in range(20):
             try:
-                output = subprocess.check_output('ipconfig', shell=True, text=True, encoding='gbk')  # ← gbk
+                output = subprocess.check_output('ipconfig', shell=True, text=True, encoding='gbk')
                 current_adapter = None
                 for line in output.splitlines():
                     if '适配器' in line or 'Adapter' in line:
@@ -363,7 +397,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         else:
             print("[ERROR] 20 秒内未获取到有效 IP 地址")
 
-        # 执行 Ping 测试（使用 gbk 编码）
+        # === 步骤6：Ping 测试 ===
         if ip_address:
             ping_cmd = f'ping -n 10 -S {ip_address} www.jd.com -4'
             print(f"[INFO] 执行 Ping: {ping_cmd}")
@@ -373,12 +407,11 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
                     shell=True,
                     capture_output=True,
                     text=True,
-                    encoding='gbk',  # ← gbk
+                    encoding='gbk',
                     timeout=10
                 )
                 ping_output = (result.stdout or result.stderr).strip()
 
-                # 健壮判断：必须有 TTL= 且无“请求超时”或“无法访问”
                 if ('TTL=' in ping_output and
                     '无法访问' not in ping_output and
                     'Destination host unreachable' not in ping_output):
@@ -401,7 +434,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         return False
 
     finally:
-        # 清理：断开并删除临时配置
+        # 清理
         print("[CLEANUP] 清理临时配置...")
         subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(f'netsh wlan delete profile name="{profile_name}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -557,38 +590,52 @@ def verify_pppoe_internet_via_web_ping(driver):
 
 
 def handle_guide_wizard(driver):
-    """处理重置后出现的向导界面，依次点击 Skip -> Skip -> Complete Setting"""
-    wait = WebDriverWait(driver, 15)
+    """
+    处理重置后出现的向导界面（多语言兼容）
+    流程：Skip (Password) → Skip (Wi-Fi) → Complete Setting
+    """
+    wait = WebDriverWait(driver, 20)
+    loading_selector = ".t-loading__overlay"
+    max_retries = 2
 
     print("\n正在处理向导界面...")
 
-    # ========== 第一步：密码设置页 -> 点击 Skip ==========
-    try:
-        skip_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_skip)))
-        skip_btn.click()
-        print("已跳过密码设置")
-    except Exception as e:
-        print(f"跳过密码设置失败: {e}")
+    steps = [
+        ("跳过密码设置", ec.guide_skip),
+        ("跳过 Wi-Fi 设置", ec.guide_skip),
+        ("点击 Complete Setting", ec.guide_complete)
+    ]
 
-    # ========== 第二步：Wi-Fi 设置页 -> 点击 Skip ==========
-    try:
-        # 注意这里可能需要更精确的定位器来区分不同的“Skip”按钮
-        skip_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_skip)))
-        skip_btn.click()
-        print("已跳过 Wi-Fi 设置")
-    except Exception as e:
-        print(f"跳过 Wi-Fi 设置失败: {e}")
-        # 尝试使用 Next
+    for step_name, selector in steps:
+        clicked = False
+        for attempt in range(max_retries):
+            try:
+                # 等待加载遮罩消失
+                WebDriverWait(driver, 10).until(
+                    EC.invisibility_of_element_located((By.CSS_SELECTOR, loading_selector))
+                )
+                # 等待按钮可点击并点击
+                button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
+                button.click()
+                print(f"{step_name} 成功")
+                time.sleep(2)  # 页面过渡缓冲
+                clicked = True
+                break
+            except Exception as e:
+                print(f"{step_name} 第 {attempt + 1} 次尝试失败: {str(e)[:100]}...")
+                if attempt == max_retries - 1:
+                    # 最后一次失败时截图
+                    if 'ct' in globals() or hasattr(__import__('__main__'), 'ct'):
+                        try:
+                            save_screenshot_and_log(driver, f"guide_fail_{step_name.replace(' ', '_')}")
+                        except Exception as error:
+                            pass  # 容错，避免因 ct 未定义崩溃
+                time.sleep(3)
 
+        if not clicked:
+            print(f"{step_name} 最终失败，继续下一步...")
 
-    # ========== 第三步：完成设置页 -> 点击 Complete Setting ==========
-    try:
-        complete_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.guide_complete)))
-        complete_btn.click()
-        print("已完成设置，进入主界面")
-    except Exception as e:
-        print(f"点击 Complete Setting 失败: {e}")
-    time.sleep(5)
+    print("向导处理流程结束")
 
 
 def save_screenshot_and_log(driver, name="screenshot"):
