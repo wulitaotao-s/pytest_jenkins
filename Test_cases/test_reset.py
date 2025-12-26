@@ -19,7 +19,13 @@ def test_reset(driver):
     modified_24g_pass = "12345678"
     ct.safe_set_input_value(driver, ec.wlan_SSID, modified_24g_ssid)
     ct.safe_set_input_value(driver, ec.wlan_Password, modified_24g_pass)
-
+    # 等待加载遮罩消失（如果存在）
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.invisibility_of_element_located((By.CSS_SELECTOR, ".t-loading__overlay"))
+        )
+    except:
+        pass  # 如果没有遮罩，忽略
     commit_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wlan_commit)))
     commit_btn.click()
     print("已保存 2.4G Wi-Fi 配置")
@@ -34,7 +40,13 @@ def test_reset(driver):
 
     ct.safe_set_input_value(driver, ec.wlan11ac_SSID, modified_5g_ssid)
     ct.safe_set_input_value(driver, ec.wlan11ac_Password, modified_5g_pass)
-
+    # 等待加载遮罩消失（如果存在）
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.invisibility_of_element_located((By.CSS_SELECTOR, ".t-loading__overlay"))
+        )
+    except:
+        pass  # 如果没有遮罩，忽略
     commit_btn_5g = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wlan11ac_commit)))
     commit_btn_5g.click()
     print("已保存 5G Wi-Fi 配置")

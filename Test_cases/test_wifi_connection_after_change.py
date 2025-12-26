@@ -23,7 +23,7 @@ def test_wifi_connection_after_change(driver):
     # ========== 定义新配置 ==========
     ssid_24g_new = "test-change-2.4G"
     password_new = "12345678"
-    ssid_5g_new = "test-change-2.4G"
+    ssid_5g_new = "test-change-5G"
 
     # ========== 修改并测试 2.4G Wi-Fi ==========
     print("修改 2.4G Wi-Fi 配置...")

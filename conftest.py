@@ -365,7 +365,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
 
         # 执行 Ping 测试（使用 gbk 编码）
         if ip_address:
-            ping_cmd = f'ping -n 3 -S {ip_address} www.jd.com'
+            ping_cmd = f'ping -n 10 -S {ip_address} www.jd.com -4'
             print(f"[INFO] 执行 Ping: {ping_cmd}")
             try:
                 result = subprocess.run(

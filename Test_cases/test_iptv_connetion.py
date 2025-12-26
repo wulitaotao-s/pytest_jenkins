@@ -86,7 +86,7 @@ def test_wan_iptv(driver):
     print("保存 IPTV 配置")
     iptv_save = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.iptv_commit)))
     iptv_save.click()
-    time.sleep(3)
+    time.sleep(10)
 
     # ========== 5. 执行 Ping 诊断 ==========
     print("执行 Ping 测试")
