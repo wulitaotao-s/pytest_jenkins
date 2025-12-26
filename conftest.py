@@ -264,7 +264,7 @@ def restart_test_nic_and_ping() -> bool:
 
 
 def connect_and_test_wifi(ssid: str, password: str) -> bool:
-    """直接连接指定 Wi-Fi 并测试网络连通性（含无线网卡重启，适配中文 Windows）"""
+    """直接连接指定 Wi-Fi 并测试网络连通性（适配中文 Windows，连接失败时重试一次）"""
     profile_name = f"__TEMP_{ssid}"
     tmp_path = None
     ip_address = None
@@ -274,46 +274,11 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
     try:
         print(f"[INFO] 跳过扫描，直接尝试连接 Wi-Fi: '{ssid}'")
 
-        # === 步骤1：断开当前连接 ===
+        # 断开当前连接
         print("[INFO] 断开当前 Wi-Fi 连接...")
         subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        # === 步骤2：获取无线网卡名称并重启（关键新增）===
-        wifi_interface = None
-        try:
-            output = subprocess.check_output('netsh interface show interface', shell=True, text=True, encoding='gbk')
-            lines = output.splitlines()
-            for line in lines:
-                if '已启用' in line or 'Enabled' in line:
-                    parts = [p.strip() for p in line.split() if p]
-                    # 常见关键词匹配（中英文）
-                    if any(kw in line for kw in ['Wi-Fi', 'WLAN', '无线', 'Wireless']):
-                        # 最后一个字段通常是接口名（可能含空格）
-                        # 示例: "已启用     已连接     Wi-Fi"
-                        # 我们反向找：从行尾开始，跳过状态列
-                        fields = line.strip().split()
-                        if len(fields) >= 3:
-                            name = ' '.join(fields[2:])  # 取第3个及之后作为名称
-                            wifi_interface = name
-                            break
-        except Exception as e:
-            print(f"[WARN] 无法获取无线网卡名称，跳过重启: {e}")
-
-        if wifi_interface:
-            print(f"[INFO] 检测到无线网卡: '{wifi_interface}'，正在重启...")
-            # 禁用
-            disable_cmd = f'netsh interface set interface name="{wifi_interface}" admin=disabled'
-            subprocess.run(disable_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(2)
-            # 启用
-            enable_cmd = f'netsh interface set interface name="{wifi_interface}" admin=enabled'
-            subprocess.run(enable_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(3)  # 给驱动加载时间
-            print("[INFO] 无线网卡已重启")
-        else:
-            print("[WARN] 未识别到无线网卡，跳过重启步骤")
-
-        # === 步骤3：创建并添加临时配置文件 ===
+        # 创建临时配置文件（WPA2-PSK + AES）
         xml_content = f'''<?xml version="1.0"?>
 <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
     <name>{profile_name}</name>
@@ -341,6 +306,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
             f.write(xml_content)
             tmp_path = f.name
 
+        # 添加配置
         print("[INFO] 添加临时 Wi-Fi 配置文件...")
         add_result = subprocess.run(
             f'netsh wlan add profile filename="{tmp_path}"',
@@ -353,21 +319,32 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
             print(f"[ERROR] 添加 Wi-Fi 配置失败:\n{add_result.stderr}")
             return False
 
-        # === 步骤4：发起连接 ===
-        print("[INFO] 发起 Wi-Fi 连接...")
-        connect_result = subprocess.run(
-            f'netsh wlan connect name="{profile_name}"',
-            shell=True,
-            capture_output=True,
-            text=True,
-            encoding='gbk',
-            timeout=30
-        )
-        if connect_result.returncode != 0:
-            print(f"[ERROR] Wi-Fi 连接命令失败:\n{connect_result.stderr}")
+        # 发起连接（最多重试 2 次）
+        print("[INFO] 发起 Wi-Fi 连接（最多重试 2 次）...")
+        connect_success = False
+        for attempt in range(2):
+            connect_result = subprocess.run(
+                f'netsh wlan connect name="{profile_name}"',
+                shell=True,
+                capture_output=True,
+                text=True,
+                encoding='gbk',
+                timeout=30
+            )
+            if connect_result.returncode == 0:
+                print(f"[SUCCESS] 第 {attempt + 1} 次连接成功")
+                connect_success = True
+                break
+            else:
+                print(f"[WARN] 第 {attempt + 1} 次连接失败: {connect_result.stderr.strip()}")
+                if attempt < 1:
+                    time.sleep(3)
+
+        if not connect_success:
+            print("[ERROR] 两次连接均失败")
             return False
 
-        # === 步骤5：等待获取有效 IP ===
+        # 等待获取有效 IPv4 地址（最多 20 秒）
         print("[INFO] 等待获取有效 IPv4 地址（最多 20 秒）...")
         for _ in range(20):
             try:
@@ -397,7 +374,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         else:
             print("[ERROR] 20 秒内未获取到有效 IP 地址")
 
-        # === 步骤6：Ping 测试 ===
+        # 执行 Ping 测试
         if ip_address:
             ping_cmd = f'ping -n 10 -S {ip_address} www.jd.com -4'
             print(f"[INFO] 执行 Ping: {ping_cmd}")
@@ -434,7 +411,7 @@ def connect_and_test_wifi(ssid: str, password: str) -> bool:
         return False
 
     finally:
-        # 清理
+        # 清理：断开并删除临时配置
         print("[CLEANUP] 清理临时配置...")
         subprocess.run('netsh wlan disconnect', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(f'netsh wlan delete profile name="{profile_name}"', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
