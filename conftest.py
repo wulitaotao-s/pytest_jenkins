@@ -87,7 +87,6 @@ def login(driver):
     print("登录成功，进入首页")
 
 
-
 def wait_for_device_online(base_url, timeout=150):
     """等待设备重启完成，直到能访问 base_url"""
     print(f"等待设备重启（最多 {timeout} 秒）...")

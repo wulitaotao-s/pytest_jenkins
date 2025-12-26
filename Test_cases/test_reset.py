@@ -15,8 +15,8 @@ def test_reset(driver):
     print("\n[步骤2] 修改 2.4G Wi-Fi 配置...")
     driver.get(ec.Basic_wifi_24G)
     wait = WebDriverWait(driver, 15)
-    modified_24g_ssid = "test_reset_2.4G"
-    modified_24g_pass = "@@##1212"
+    modified_24g_ssid = "test-reset-2.4G"
+    modified_24g_pass = "12345678"
     ct.safe_set_input_value(driver, ec.wlan_SSID, modified_24g_ssid)
     ct.safe_set_input_value(driver, ec.wlan_Password, modified_24g_pass)
 
@@ -29,8 +29,8 @@ def test_reset(driver):
     print("\n[步骤3] 修改 5G Wi-Fi 配置...")
     driver.get(ec.Basic_wifi_5G)
 
-    modified_5g_ssid = "test_reset_5G"
-    modified_5g_pass = "@@##1212"
+    modified_5g_ssid = "test-reset-5G"
+    modified_5g_pass = "12345678"
 
     ct.safe_set_input_value(driver, ec.wlan11ac_SSID, modified_5g_ssid)
     ct.safe_set_input_value(driver, ec.wlan11ac_Password, modified_5g_pass)
