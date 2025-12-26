@@ -55,12 +55,12 @@ def test_reboot(driver):
 
     # ========== 5. 等待设备重启 ==========
     print("等待设备重启...")
-    time.sleep(60)  # 给设备一点关机时间
+    time.sleep(30)  # 给设备一点关机时间
     wait_for_device_online(ec.url_base, timeout=150)
 
     # ========== 6. 重新登录并进入 Home 页面 ==========
     print("设备已恢复，重新登录...")
-    driver.get(ec.home)
+    login(driver)
     time.sleep(3)
     save_screenshot_and_log(driver)
 
