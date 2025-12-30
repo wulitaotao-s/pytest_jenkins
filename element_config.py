@@ -56,7 +56,10 @@ DevicesInfo = "#devicesInfo"
 Online_Device = "//span[contains(text(), 'online') or contains(text(), 'Online')]"
 Offline_Device = "//span[contains(text(), 'offline') or contains(text(), 'Offline')]"
 
-# basic 
+# basic
+## wab add
+wan_add = "#wanAddButton"
+wan_del = "#wanDeleteButton"
 ## wan
 Basic_wan = url_base + "/index.html#/basic/wan"
 wan_Enable = "#wanEnable"

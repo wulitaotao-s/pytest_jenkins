@@ -2,14 +2,13 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value, save_screenshot_and_log
+from conftest import login, safe_set_input_value, save_screenshot_and_log, select_or_create_wan_by_service
 import element_config as ec
 import re
 
 
 def test_voip_connection(driver):
     """测试 VoIP 连接配置：设置 VOICE WAN + VoIP 参数，验证注册状态和 Ping 诊断"""
-
     # ========== 1. 登录 ==========
     login(driver)
 
@@ -19,16 +18,10 @@ def test_voip_connection(driver):
     wait = WebDriverWait(driver, 15)
 
     # ========== 3. 配置 VOICE WAN 条目 ==========
-    # 点击 Request Name 输入框（展开下拉）
-    print("点击 Request Name 下拉框")
-    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
-    request_name_input.click()
+    # 替换原 Request Name 点击+选择逻辑
+    select_or_create_wan_by_service(driver, ["VOICE", "VOIP"])
 
-    # 选择 VOICE 选项（精确匹配 title="3_VOICE_R_VID_300"）
-    print("选择 Request Name = 3_VOICE_R_VID_300")
-    voice_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_VOICE)))
-    voice_option.click()
-
+    # ========== 后续配置保持不变 ==========
     # 设置 Access Type = Route
     print("设置 Access Type = Route")
     access_type_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type)))

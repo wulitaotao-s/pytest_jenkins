@@ -2,14 +2,13 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value, save_screenshot_and_log
+from conftest import login, safe_set_input_value, save_screenshot_and_log, select_or_create_wan_by_service  # ← 新增导入
 import element_config as ec
 import re
 
 
 def test_wan_iptv(driver):
     """测试 WAN + IPTV 配置及 Ping 诊断：设置 WAN VLAN=200, IPTV Multicast VLAN=3030，执行 Ping 测试"""
-
     # ========== 1. 登录 ==========
     login(driver)
 
@@ -19,16 +18,10 @@ def test_wan_iptv(driver):
     wait = WebDriverWait(driver, 15)
 
     # ========== 3. 配置 WAN 条目 ==========
-    # 点击 Request Name 输入框（展开下拉）
-    print("点击 Request Name 下拉框")
-    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
-    request_name_input.click()
+    # 原脚本选择的是 "OTHER"，所以候选名含 "OTHER"
+    select_or_create_wan_by_service(driver, ["OTHER", "IPTV"])
 
-    # 选择 Other 选项（精确匹配 title="TR069"）
-    print("选择 Request Name = TR069")
-    tr069_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_OTHER)))
-    tr069_option.click()
-
+    # ========== 后续配置保持不变 ==========
     # 设置 Access Type = Route
     print("设置 Access Type = Route")
     access_type_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type)))
@@ -42,6 +35,13 @@ def test_wan_iptv(driver):
     conn_mode_input.click()
     dhcp_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode_DHCP)))
     dhcp_option.click()
+
+    # 设置vlan tag
+    print("设置VLan tag  = Tag")
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type)))
+    vlan_tag.click()
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type_TAG)))
+    vlan_tag.click()
 
     # 设置 VLAN ID = 200
     print("设置 VLAN ID = 200")

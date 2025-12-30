@@ -17,7 +17,7 @@ def test_wifi_connection_after_change(driver):
       5. 使用新配置连接 5G Wi-Fi 并验证网络
     """
     # ========== 前置：确认 PPPoE + 互联网连通性 ==========
-    ct.verify_pppoe_internet_via_web_ping(driver)
+    ct.setup_and_verify_pppoe_internet(driver)
 
     # ========== 定义新配置 ==========
     ssid_24g_new = "test-change-2.4G"

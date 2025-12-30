@@ -19,7 +19,7 @@ def test_wifi_init_status(driver):
       4. 获取 5G SSID/密码，执行连接测试
     """
     # ========== 关键前置：确认 PPPoE 拨号成功且可上网 ==========
-    ct.verify_pppoe_internet_via_web_ping(driver)
+    ct.setup_and_verify_pppoe_internet(driver)
 
     # ========== 正式 Wi-Fi 验证 ==========
     # 测试 2.4G Wi-Fi

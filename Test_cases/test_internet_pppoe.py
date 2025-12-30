@@ -3,13 +3,12 @@ import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value, restart_test_nic_and_ping, save_screenshot_and_log
+from conftest import login, safe_set_input_value, restart_test_nic_and_ping, save_screenshot_and_log, select_or_create_wan_by_service
 import element_config as ec
 
 
 def test_wan_pppoe(driver):
     """测试 WAN PPPoE 模式 + Ping www.jd.com 连通性"""
-
     # ========== 1. 登录 ==========
     login(driver)
 
@@ -20,12 +19,8 @@ def test_wan_pppoe(driver):
 
     # ========== 3. 配置 WAN 为 PPPoE 模式 ==========
     print(" 配置 WAN 为 PPPoE 模式")
-
-    # 选择 Request Name: 2_INTERNET_R_VID_100
-    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
-    request_name_input.click()
-    internet_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_INTERNET)))
-    internet_option.click()
+    # 替换原 Request Name 选择
+    select_or_create_wan_by_service(driver, ["INTERNET", "HSI"])
 
     # 设置 Access Type = Route
     access_type_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type)))
@@ -43,6 +38,13 @@ def test_wan_pppoe(driver):
     print(" 设置 PPPoE 用户名和密码")
     safe_set_input_value(driver, ec.wan_pppoe_name, "PPPOE")  # 示例值，请替换为实际账号
     safe_set_input_value(driver, ec.wan_pppoe_password, "PPPOE")  # 示例值，请替换为实际密码
+
+    # 设置vlan tag
+    print("设置VLan tag  = Tag")
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type)))
+    vlan_tag.click()
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type_TAG)))
+    vlan_tag.click()
 
     # 设置 VLAN ID = 100
     print(" 设置 VLAN ID = 100")

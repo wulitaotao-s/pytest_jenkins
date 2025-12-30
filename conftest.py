@@ -20,14 +20,14 @@ BASE_PARENT = r"D:\pytest_jenkins_test@tmp"
 
 @pytest.fixture(scope="function")
 def driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    d = webdriver.Chrome(options=chrome_options)
-    # d = webdriver.Chrome()
+    # chrome_options = Options()
+    # chrome_options.add_argument("--headless=new")
+    # chrome_options.add_argument("--no-sandbox")
+    # chrome_options.add_argument("--disable-dev-shm-usage")
+    # chrome_options.add_argument("--disable-gpu")
+    # chrome_options.add_argument("--window-size=1920,1080")
+    # d = webdriver.Chrome(options=chrome_options)
+    d = webdriver.Chrome()
     yield d
     d.quit()
 
@@ -440,130 +440,75 @@ def wait_for_non_empty_value(driver, selector, timeout=15):
     assert False, f"元素 {selector} 的 value 在 {timeout} 秒内未被填充"
 
 
-def verify_pppoe_internet_via_web_ping(driver):
+def setup_and_verify_pppoe_internet(driver,pppoe_username="PPPOE",pppoe_password="PPPOE",vlan_id="100",target="www.jd.com"):
     """
-    内部函数：通过 Web 界面 Ping www.jd.com 验证 PPPoE 拨号后互联网是否可达。
-    不修改配置，仅验证当前状态。
+    设置 PPPoE WAN 并验证互联网连通性（完整流程）
+    注意：此函数会修改设备 WAN 配置！
     """
-    """测试 WAN PPPoE 模式 + Ping www.jd.com 连通性"""
-    # ========== 1. 登录 ==========
     login(driver)
-
-    # ========== 2. 进入 Basic > WAN 页面 ==========
-    print(" 跳转到 WAN 配置页面")
     driver.get(ec.Basic_wan)
     wait = WebDriverWait(driver, 15)
 
-    # ========== 3. 配置 WAN 为 PPPoE 模式 ==========
-    print(" 配置 WAN 为 PPPoE 模式")
+    # === 使用统一 WAN 选择器 ===
+    select_or_create_wan_by_service(driver, ["INTERNET", "HSI"])
 
-    # 选择 Request Name: 2_INTERNET_R_VID_100
-    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
-    request_name_input.click()
-    internet_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_INTERNET)))
-    internet_option.click()
-
-    # 设置 Access Type = Route
+    # Access Type = Route
     access_type_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type)))
     access_type_input.click()
     route_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Access_Type_Route)))
     route_option.click()
 
-    # 设置 Connection Mode = PPPoE
+    # Connection Mode = PPPoE
     conn_mode_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode)))
     conn_mode_input.click()
     pppoe_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode_PPPoE)))
     pppoe_option.click()
 
-    # 设置 Username 和 Password
-    print(" 设置 PPPoE 用户名和密码")
-    safe_set_input_value(driver, ec.wan_pppoe_name, "PPPOE")  # 示例值，请替换为实际账号
-    safe_set_input_value(driver, ec.wan_pppoe_password, "PPPOE")  # 示例值，请替换为实际密码
+    # 设置账号密码
+    safe_set_input_value(driver, ec.wan_pppoe_name, pppoe_username)
+    safe_set_input_value(driver, ec.wan_pppoe_password, pppoe_password)
 
-    # 设置 VLAN ID = 100
-    print(" 设置 VLAN ID = 100")
-    safe_set_input_value(driver, ec.wan_VLAN_ID, "100")
+    # 设置vlan tag
+    print("设置VLan tag  = Tag")
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type)))
+    vlan_tag.click()
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type_TAG)))
+    vlan_tag.click()
 
-    # 设置 MTU = 1500
-    print(" 设置 MTU = 1500")
+    # VLAN
+    safe_set_input_value(driver, ec.wan_VLAN_ID, vlan_id)
     safe_set_input_value(driver, ec.wan_MTU, "1500")
 
-    # 启用 Nat Enable 开关
-    switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_nat_enable)))
-    if "t-is-checked" not in switch.get_attribute("class"):
-        switch.click()
-        print(" 启用 Nat Enable")
-    else:
-        print(" Nat Enable 已启用")
+    # 启用 NAT
+    toggle_switch(driver, ec.wan_nat_enable, enable=True)
 
-    # 设置 Protocol Version = IPv4/IPv6
-    ipv4_ipv6_radio = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_ipv4ipv6)))
-    if not ipv4_ipv6_radio.is_selected():
-        ipv4_ipv6_radio.click()
-        print(" 设置协议版本为 IPv4/IPv6")
+    # 启用 WAN
+    toggle_switch(driver, ec.wan_Enable, enable=True)
 
-    # 设置 Connection Mode = DHCPv6（可选，根据设备）
-    dhcpv6_option_list = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_IPv6_Connection_Mode)))
-    dhcpv6_option_list.click()
-    dhcpv6_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_IPv6_Connection_Mode_DHCP)))
-    dhcpv6_option.click()
-
-    # 启用 WAN 开关
-    switch = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Enable)))
-    if "t-is-checked" not in switch.get_attribute("class"):
-        switch.click()
-        print(" 启用 WAN")
-    else:
-        print(" WAN 已启用")
-
-    # 保存配置
-    print(" 保存 WAN 配置")
+    # 保存
     save_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_commit)))
     save_btn.click()
     time.sleep(15)
 
-    # ========== 4. 执行 Ping 测试 ==========
-    print(" 跳转到系统测试页面")
+    # === Ping 验证 ===
     driver.get(ec.Advanced_System_System_Test)
-    wait = WebDriverWait(driver, 15)
-
-    # 设置 Ping 次数
     safe_set_input_value(driver, ec.System_Test_Ping_Repeat_Times, "3")
 
-    # 选择接口：Internet
-    print(" 选择 Ping 接口 = Internet")
     interface_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Interface)))
     driver.execute_script("arguments[0].click();", interface_input)
     internet_opt = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_INTERNET)))
     internet_opt.click()
 
-    # 设置目标地址
-    print(" 设置 Ping 目标地址 = www.jd.com")
-    safe_set_input_value(driver, ec.System_Test_Ping_Address, "www.jd.com")
+    safe_set_input_value(driver, ec.System_Test_Ping_Address, target)
 
-    # 点击开始
     start_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.System_Test_Ping_Start)))
     start_btn.click()
-    time.sleep(20)  # 等待 Ping 完成
+    time.sleep(20)
 
-    # ========== 5. 检查结果：通过 page_source 全文搜索 ==========
-    print(" 检查 Ping 结果...")
     page_source = driver.page_source
-
-    # 匹配模式：64 bytes from [任意IP]: icmp_seq=... time=...
     pattern = r'64 bytes from \d+\.\d+\.\d+\.\d+: icmp_seq=\d+ ttl=\d+ time=\d+\.\d+ ms'
-
-    if re.search(pattern, page_source):
-        print("Ping www.jd.com 成功")
-        print("\nPing 详细输出：")
-        print("=" * 50)
-        matches = re.findall(pattern, page_source)
-        for match in matches:
-            print(match)
-        print("=" * 50)
-    else:
-        print("Ping www.jd.com 失败：未收到有效响应")
-        assert False, "Ping www.jd.com 失败：未收到有效响应"
+    if not re.search(pattern, page_source):
+        assert False, f"Ping {target} 失败"
 
 
 def handle_guide_wizard(driver):
@@ -618,7 +563,7 @@ def handle_guide_wizard(driver):
 def save_screenshot_and_log(driver, name="screenshot"):
     """
     截图函数：
-    - 根目录：D:\pytest_jenkins_test@tmp\photo_YYYY-MM-DD（按天）
+    - 根目录：D:\\pytest_jenkins_test@tmp\\photo_YYYY-MM-DD（按天）
     - 子目录：按调用脚本名（如 test_login.py → test-login）
     - 同一脚本多次调用：文件名自动编号（screenshot_00.png, _01.png...）
     """
@@ -671,3 +616,76 @@ def save_screenshot_and_log(driver, name="screenshot"):
             print(f"截图失败: {e}")
 
 
+def select_or_create_wan_by_service(driver, service_names):
+    """
+    智能处理 WAN Request Name 选择，兼容不同设备的服务命名差异。
+
+    Args:
+        driver: WebDriver 实例
+        service_names: str 或 List[str]
+            - 若为 str（如 "TR069"）→ 等效于 ["TR069"]
+            - 若为 list（如 ["INTERNET", "HSI"]）→
+                • 匹配时检查所有名称
+                • 新建时使用第一个作为标准 Bearer Service
+
+    Behavior:
+    1. 点击 Request Name 输入框
+    2. 若有下拉 → 按顺序尝试点击第一个存在的 li[title="xxx"]
+    3. 若无下拉（单条目）→ 检查当前值是否等于任一候选名（精确匹配）
+        - 是：复用
+        - 否：点击 Add，新建，并设置 Bearer Service = 标准名（首元素）
+    """
+    # === 标准化输入 ===
+    if isinstance(service_names, str):
+        candidate_names = [service_names]
+    elif isinstance(service_names, (list, tuple)):
+        if not service_names:
+            raise ValueError("service_names 列表不能为空")
+        candidate_names = list(service_names)
+    else:
+        raise TypeError("service_names 必须是字符串或字符串列表")
+
+    standard_name = candidate_names[0]  # 用于新建 WAN 的 Bearer Service
+
+    wait = WebDriverWait(driver, 15)
+
+    print(f"点击 Request Name 输入框，候选服务名: {candidate_names}")
+    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
+    request_name_input.click()
+    time.sleep(1)
+
+    # === 尝试从下拉中选择（按顺序）===
+    for name in candidate_names:
+        try:
+            option = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, f'li[title="{name}"]'))
+            )
+            print(f"检测到多条 WAN，选择 Request Name = '{name}'")
+            option.click()
+            return  # 成功选择，直接退出
+        except Exception:
+            continue  # 尝试下一个
+
+    # === 单条目场景：无下拉 ===
+    current_value = (request_name_input.get_attribute("value") or "").strip()
+
+    # 精确匹配（不是子串！因为 "HSI" 不应匹配 "HSI_VOIP"）
+    if current_value in candidate_names:
+        print(f"当前 WAN 名称匹配候选服务名，直接复用")
+        return
+
+    # === 需要新建 WAN ===
+    print(f"当前 WAN ('{current_value}') 不匹配任何候选名 {candidate_names}，点击 Add 新建")
+    request_name_input.click()  # 确保输入框聚焦（部分 UI 需要）
+    add_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#wanAddButton")))
+    add_btn.click()
+    time.sleep(2)
+
+    # 设置 Bearer Service = standard_name
+    bearer_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Bearer_Service)))
+    bearer_input.click()
+    bearer_option = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, f'li[title="{standard_name}"]'))
+    )
+    bearer_option.click()
+    print(f"新建 WAN 条目，Bearer Service 设为: '{standard_name}'")

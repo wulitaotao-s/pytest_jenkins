@@ -3,7 +3,7 @@ import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from conftest import login, safe_set_input_value,restart_test_nic_and_ping, save_screenshot_and_log
+from conftest import login, safe_set_input_value,restart_test_nic_and_ping, save_screenshot_and_log,select_or_create_wan_by_service
 import element_config as ec
 
 
@@ -19,15 +19,8 @@ def test_wan_dhcp(driver):
     wait = WebDriverWait(driver, 15)
 
     # ========== 3. 配置 WAN 为 DHCP 模式 ==========
-    # 点击 Request Name 下拉框
-    print("点击 Request Name 下拉框")
-    request_name_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name)))
-    request_name_input.click()
-
-    # 选择 Internet（通常对应外网 DHCP）
-    print("选择 Request Name = Internet")
-    internet_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Request_Name_INTERNET)))
-    internet_option.click()
+    # 点击 Request Name 输入框（展开下拉）
+    select_or_create_wan_by_service(driver, "INTENET")
 
     # 设置 Access Type = Route
     print("设置 Access Type = Route")
@@ -42,6 +35,13 @@ def test_wan_dhcp(driver):
     conn_mode_input.click()
     dhcp_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_Connection_Mode_DHCP)))
     dhcp_option.click()
+
+    # 设置vlan tag
+    print("设置VLan tag  = Tag")
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type)))
+    vlan_tag.click()
+    vlan_tag = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ec.wan_VLAN_Gateway_Type_TAG)))
+    vlan_tag.click()
 
     # 设置 VLAN ID = 400（使用 JS 安全设置）
     print("设置 VLAN ID = 100")
