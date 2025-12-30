@@ -669,3 +669,5 @@ def save_screenshot_and_log(driver, name="screenshot"):
             print(f"截图已保存: {filepath}")
         except Exception as e:
             print(f"截图失败: {e}")
+
+
